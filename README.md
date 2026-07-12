@@ -25,7 +25,7 @@ APP目录位于CyberCAM系统文件系统的`/data/app`路径下。
 
 ## APP列表
 
-- [face-det](./face-det/README.md) : 人脸检测(支持五点关键点检测)；
+- [face-det](./app/face-det/README.md) : 人脸检测(支持五点关键点检测)；
 - yolo11-det : YOLO11检测案例；
 - yolo11-cls : YOLO11分类案例；
 
@@ -38,4 +38,4 @@ APP目录位于CyberCAM系统文件系统的`/data/app`路径下。
 
 请将将测试好的APP上传到`app`目录下，并在您的APP文件夹内添加`README.md`文件，介绍你的APP和使用方法。
 
-**对于优秀的APP，我们将会在CyberCAM系统中预装，并在官方文档中进行推荐。并给予开发者产品或现金奖励。**
+**对于优秀的APP，我们将会在CyberCAM系统中预装，并在官方文档中进行推荐。并给予开发者产品或其它形式奖励。**
