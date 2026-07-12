@@ -1,0 +1,5 @@
+#APP信息配置文件/APP Config information
+
+name_cn="YOLO11检测" #中文名称
+name_en="YOLO11 DET" #English Name
+index=7 #排列顺序

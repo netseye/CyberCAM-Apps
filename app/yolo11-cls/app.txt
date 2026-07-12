@@ -1,0 +1,5 @@
+#APP信息配置文件/APP Config information
+
+name_cn="YOLO11分类" #中文名称
+name_en="YOLO11 CLS" #English Name
+index=8 #排列顺序
