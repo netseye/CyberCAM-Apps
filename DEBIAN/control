@@ -1,0 +1,8 @@
+Package: cybercam-apps
+Description: cybercam apps
+Version: 1.0.0
+Maintainer: 01studio
+Section: free
+Priority: optional
+Installed-Size: 9968
+Architecture: all
