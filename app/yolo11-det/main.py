@@ -115,10 +115,10 @@ while True:
         color = _get_label_color(box.label, len(labels))
         label_text = f"{labels[box.label]} {box.reliability:.2f}"
 
-        left_x = int(box.x - box.w / 2)
-        left_y = int(box.y - box.h / 2)
-        right_x = int(box.x + box.w / 2)
-        right_y = int(box.y + box.h / 2)
+        left_x = int(box.x)
+        left_y = int(box.y)
+        right_x = int(box.x + box.w)
+        right_y = int(box.y + box.h)
 
         # 获取文字尺寸
         (label_width, label_height), baseline = ft.getTextSize(label_text, FONT_SIZE, -1)
