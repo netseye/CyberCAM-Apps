@@ -15,6 +15,8 @@ else:
 model_size = 640 #模型尺寸
 detector = kpu.PERSON_DETECT(model_path, model_size) # 加载模型 
 
+labels = [ 'person' ]
+
 #字符显示改进，支持中英文显示
 ft = cv2.freetype.createFreeType2() #创建freetype渲染器
 ft.loadFontData("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 0) #加载字体文件, 文泉驿正黑
@@ -36,6 +38,9 @@ def putText_Chinese(img, text, org, fontScale=30, color=(0, 255, 0)):
     )
     return img
 
+def _get_label_color(label_index, num_labels):
+    r, g, b = colorsys.hsv_to_rgb(label_index / num_labels, 0.9, 0.8)
+    return (int(b * 255), int(g * 255), int(r * 255))
 
 # 初始化屏幕
 Display.init()
@@ -69,26 +74,25 @@ while True:
     boxes = detector.run(img, 0.5, 0.45)
 
     # 输出检测结果
-    '''
     for box in boxes:
         print(
-            "{:f} ({:4d},{:4d}) w{:4d} h{:4d}".format(
+            "{:f} ({:4d},{:4d}) w{:4d} h{:4d} {:s}".format(
                 box.reliability,
                 box.x,
                 box.y,
                 box.w,
                 box.h,
+                labels[box.label],
             )
         )
-    '''
 
     # 绘制检测框和中文标签 
     for box in boxes:
 
         FONT_SIZE = 30 # 字体大小
 
-        color = (0, 255, 0)
-        label_text = f"person {box.reliability:.2f}"
+        color =  (0, 0, 255)
+        label_text = f"{labels[box.label]} {box.reliability:.2f}"
 
         left_x = int(box.x)
         left_y = int(box.y)
@@ -105,11 +109,11 @@ while True:
             bg_y1 = 0
             text_y = label_height
 
-        # 画检测框（不同标签不同颜色）
+        # 画检测框
         cv2.rectangle(img, (left_x, left_y), (right_x, right_y), color, 2)
 
         #输出字符
-        putText_Chinese(img, label_text, (box.x, box.y), fontScale=FONT_SIZE, color=color)
+        putText_Chinese(img, label_text, (left_x, text_y), fontScale=FONT_SIZE, color=color)
 
     # 每满1秒计算一次平均FPS
     frame_count += 1    
