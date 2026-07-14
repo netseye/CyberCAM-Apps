@@ -124,17 +124,17 @@ while True:
         (label_width, label_height), baseline = ft.getTextSize(label_text, FONT_SIZE, -1)
 
         # 防止标签超出图像顶部
-        text_y = left_y - baseline
+        text_y = left_y - baseline - 5
         bg_y1 = left_y - label_height - baseline
         if bg_y1 < 0:
             bg_y1 = 0
-            text_y = label_height
+            text_y = label_height + 5
 
         # 画检测框（不同标签不同颜色）
         cv2.rectangle(img, (left_x, left_y), (right_x, right_y), color, 2)
 
         #输出字符
-        putText_Chinese(img, label_text, (left_x, text_y), fontScale=FONT_SIZE, color=color)
+        putText_Chinese(img, label_text, (left_x + 5, text_y), fontScale=FONT_SIZE, color=color)
 
     # 每满1秒计算一次平均FPS
     frame_count += 1    
