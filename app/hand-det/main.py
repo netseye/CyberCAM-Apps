@@ -15,7 +15,7 @@ else:
 model_size = 512 #模型尺寸
 detector = kpu.HAND_DETECT(model_path, model_size) # 加载模型 
 
-labels = [ "Fall", "NoFall"]
+labels = [ "hand"]
 
 #字符显示改进，支持中英文显示
 ft = cv2.freetype.createFreeType2() #创建freetype渲染器
