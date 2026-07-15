@@ -1,3 +1,9 @@
+'''
+实验名称：手掌关键点分类
+实验平台：CyberCAM
+作者：01Studio
+'''
+
 import cv2, time, os, colorsys
 from walnutpi import kpu, Display, Sensor, IDE, direction
 
@@ -99,9 +105,10 @@ while True:
 
     # 手势识别
     results = detector.run(img, 0.2, 0.5)
-
+    ''''''
     # 绘制结果
     for result in results:
+        
         print(f"rel={result.reliability:.3f} "
               f"label={labels[result.label]} "
               f"box=({result.x},{result.y},{result.w},{result.h})")
@@ -121,15 +128,15 @@ while True:
         (label_width, label_height), baseline = ft.getTextSize(label_text, 30, -1)
 
         # 防止标签超出图像顶部
-        text_y = left_y - baseline
+        text_y = left_y - baseline - 5
         bg_y1 = left_y - label_height - baseline
         if bg_y1 < 0:
             bg_y1 = 0
-            text_y = label_height
+            text_y = label_height + 5
 
         # 画检测框
         cv2.rectangle(img, (left_x, left_y), (right_x, right_y), color, 2)
-        putText_Chinese(img, label_text, (left_x, text_y), fontScale=30, color=color)
+        putText_Chinese(img, label_text, (left_x + 5, text_y), fontScale=30, color=color)
 
         # 绘制关键点
         kps = result.keypoints
@@ -156,7 +163,7 @@ while True:
         print(f"FPS: {fps:.1f}")
 
     #FPS显示
-    putText_Chinese(img, f'FPS: {fps:.1f}',  (10, 30), fontScale=30, color=(0, 255, 0))
+    #putText_Chinese(img, f'FPS: {fps:.1f}',  (10, 30), fontScale=30, color=(0, 255, 0))
 
     # 显示图像
     Display.show(img)

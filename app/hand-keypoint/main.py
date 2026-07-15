@@ -1,8 +1,10 @@
-import cv2, time, os, colorsys
-import sys
-sys.path.insert(0, '/nfs/walnutpi.kpu')
-from walnutpi_kpu.HAND_KEYPOINT import HAND_KEYPOINT
-from walnutpi import Display, Sensor, IDE, direction
+'''
+实验名称：手掌关键点检测
+实验平台：CyberCAM
+'''
+
+import cv2, time, os
+from walnutpi import kpu, Display, Sensor, IDE, direction
 
 # 优先当前文件夹下相对路径（app离线部署）
 if os.path.exists("./hand_det.kmodel") and os.path.exists("./handkp_det.kmodel"):
@@ -18,7 +20,7 @@ elif os.path.exists("/data/app/hand-keypoint/hand_det.kmodel") and \
 else:
     raise FileNotFoundError("模型文件缺失，请检查当前路径与系统路径下的模型文件是否存在。")
 
-detector = HAND_KEYPOINT(hand_det_kmodel=hand_det_path,
+detector = kpu.HAND_KEYPOINT(hand_det_kmodel=hand_det_path,
                           hand_kp_kmodel=hand_kp_path)
 
 #字符显示改进，支持中英文显示
@@ -106,15 +108,15 @@ while True:
         (label_width, label_height), baseline = ft.getTextSize(label_text, 30, -1)
 
         # 防止标签超出图像顶部
-        text_y = left_y - baseline
+        text_y = left_y - baseline  - 5
         bg_y1 = left_y - label_height - baseline
         if bg_y1 < 0:
             bg_y1 = 0
-            text_y = label_height
+            text_y = label_height + 5
 
         # 画检测框
         cv2.rectangle(img, (left_x, left_y), (right_x, right_y), color, 2)
-        putText_Chinese(img, label_text, (left_x, text_y), fontScale=30, color=color)
+        putText_Chinese(img, label_text, (left_x + 5, text_y), fontScale=30, color=color)
 
         # 绘制关键点
         kps = result.keypoints
@@ -141,7 +143,7 @@ while True:
         print(f"FPS: {fps:.1f}")
 
     #FPS显示
-    putText_Chinese(img, f'FPS: {fps:.1f}',  (10, 30), fontScale=30, color=(0, 255, 0))
+    #putText_Chinese(img, f'FPS: {fps:.1f}',  (500, 30), fontScale=30, color=(0, 255, 0))
 
     # 显示图像
     Display.show(img)

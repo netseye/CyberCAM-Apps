@@ -1,4 +1,10 @@
-import cv2, time, os, colorsys
+'''
+实验名称：人体关键点检测
+实验平台：CyberCAM
+说明：检测人体并描绘关键点
+'''
+
+import cv2, time, os
 from walnutpi import kpu, Display, Sensor, IDE, direction
 
 # 优先当前文件夹下相对路径（app离线部署）
@@ -99,16 +105,16 @@ while True:
         (label_width, label_height), baseline = ft.getTextSize(label_text, FONT_SIZE, -1)
 
         # 防止标签超出图像顶部
-        text_y = left_y - baseline
+        text_y = left_y - baseline - 5
         bg_y1 = left_y - label_height - baseline
         if bg_y1 < 0:
             bg_y1 = 0
-            text_y = label_height
+            text_y = label_height + 5
 
         # 画检测框
         cv2.rectangle(img, (left_x, left_y), (right_x, right_y), color, 2)
         #输出字符
-        putText_Chinese(img, label_text, (box.x, box.y), fontScale=FONT_SIZE, color=color)
+        putText_Chinese(img, label_text, (box.x + 5, box.y), fontScale=FONT_SIZE, color=color)
 
         # 绘制骨架连线（带颜色）
         SKELETON = [
@@ -142,7 +148,7 @@ while True:
         print("FPS: ", f'FPS: {fps:.1f}')
 
     #FPS显示
-    putText_Chinese(img, f'FPS: {fps:.1f}',  (10, 30), fontScale=30, color=(0, 255, 0))
+    #putText_Chinese(img, f'FPS: {fps:.1f}',  (10, 30), fontScale=30, color=(0, 255, 0))
 
     # 显示图像
     Display.show(img)

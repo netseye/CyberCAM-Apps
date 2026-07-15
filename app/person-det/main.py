@@ -1,3 +1,9 @@
+'''
+实验名称：人体检测
+实验平台：CyberCAM
+说明：单个或多个人体检测
+'''
+
 import cv2, time, os, colorsys
 from walnutpi import kpu, Display, Sensor, IDE, direction
 
@@ -37,10 +43,6 @@ def putText_Chinese(img, text, org, fontScale=30, color=(0, 255, 0)):
         bottomLeftOrigin=True  # False:坐标为左上角; True:与原生cv2.putText一致（左下角）
     )
     return img
-
-def _get_label_color(label_index, num_labels):
-    r, g, b = colorsys.hsv_to_rgb(label_index / num_labels, 0.9, 0.8)
-    return (int(b * 255), int(g * 255), int(r * 255))
 
 # 初始化屏幕
 Display.init()
@@ -103,17 +105,17 @@ while True:
         (label_width, label_height), baseline = ft.getTextSize(label_text, FONT_SIZE, -1)
 
         # 防止标签超出图像顶部
-        text_y = left_y - baseline
+        text_y = left_y - baseline - 5
         bg_y1 = left_y - label_height - baseline
         if bg_y1 < 0:
             bg_y1 = 0
-            text_y = label_height
+            text_y = label_height + 5
 
         # 画检测框
         cv2.rectangle(img, (left_x, left_y), (right_x, right_y), color, 2)
 
         #输出字符
-        putText_Chinese(img, label_text, (left_x, text_y), fontScale=FONT_SIZE, color=color)
+        putText_Chinese(img, label_text, (left_x + 5, text_y), fontScale=FONT_SIZE, color=color)
 
     # 每满1秒计算一次平均FPS
     frame_count += 1    
@@ -125,7 +127,7 @@ while True:
         print("FPS: ", f'FPS: {fps:.1f}')
 
     #FPS显示
-    putText_Chinese(img, f'FPS: {fps:.1f}',  (10, 30), fontScale=30, color=(0, 255, 0))
+    #putText_Chinese(img, f'FPS: {fps:.1f}',  (10, 30), fontScale=30, color=(0, 255, 0))
 
     # 显示图像
     Display.show(img)

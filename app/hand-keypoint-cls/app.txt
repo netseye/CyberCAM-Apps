@@ -1,0 +1,5 @@
+#APP信息配置文件/APP Config information
+
+name_cn="手势分类" #中文名称
+name_en="Hand KeyPoint CLS" #English Name
+index=14 #排列顺序

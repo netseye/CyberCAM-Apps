@@ -1,0 +1,5 @@
+#APP信息配置文件/APP Config information
+
+name_cn="人体关键点" #中文名称
+name_en="Person Keypoint" #English Name
+index=10 #排列顺序
