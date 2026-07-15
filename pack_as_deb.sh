@@ -22,7 +22,7 @@ cp -r ${SCRIPT_DIR}/app/person-det ${TMP_APP}/
 cp -r ${SCRIPT_DIR}/app/person-keypoint ${TMP_APP}/
 cp -r ${SCRIPT_DIR}/app/yolo11-cls ${TMP_APP}/
 cp -r ${SCRIPT_DIR}/app/yolo11-det ${TMP_APP}/
-cp -r ${SCRIPT_DIR}/app/ocr ${TMP_APP}/
+# cp -r ${SCRIPT_DIR}/app/ocr ${TMP_APP}/
 
 
 # 打包函数：接收打包文件夹路径和目标目录两个参数
