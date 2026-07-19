@@ -1,0 +1,4 @@
+#APP信息配置文件/APP Config information
+name_cn="趣拍"
+name_en="Fun Camera"
+index=21
