@@ -1,0 +1,5 @@
+#APP信息配置文件/APP Config information
+
+name_cn="IMU姿态仪" #中文名称
+name_en="IMU Attitude" #English Name
+index=20 #排列顺序
