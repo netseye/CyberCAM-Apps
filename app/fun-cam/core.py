@@ -77,6 +77,8 @@ def face_geometry(box, leye, reye, nose, lmouth, rmouth):
         'angle': math.atan2(eye_dy, eye_dx),
         'eye_center': ((lex + rex) / 2.0, (ley + rey) / 2.0),
         'eye_dist': math.hypot(eye_dx, eye_dy),
+        'left_eye': (lex, ley),
+        'right_eye': (rex, rey),
         'hat_center': ((lex + rex) / 2.0, y),
         'hat_w': float(w),
         'mouth_center': ((lmouth[0] + rmouth[0]) / 2.0, (lmouth[1] + rmouth[1]) / 2.0),

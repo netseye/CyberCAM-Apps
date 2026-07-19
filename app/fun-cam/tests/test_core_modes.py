@@ -30,6 +30,8 @@ g = face_geometry(box=(100, 100, 80, 80),
                   leye=(120, 140), reye=(160, 140),
                   nose=(140, 155), lmouth=(125, 170), rmouth=(155, 170))
 assert g['eye_center'] == (140.0, 140.0), g['eye_center']
+assert g['left_eye'] == (120, 140), g['left_eye']
+assert g['right_eye'] == (160, 140), g['right_eye']
 assert abs(g['eye_dist'] - 40.0) < 1e-6
 assert abs(g['angle'] - 0.0) < 1e-6
 assert g['mouth_center'] == (140.0, 170.0)

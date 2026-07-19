@@ -216,6 +216,7 @@ imu_ok = False
 imu = None
 imu_roll = 0.0
 imu_pitch = 0.0
+imu_last_t = None
 shake = core.ShakeDetector(spike_g=2.5, debounce_s=1.5)
 flash_until = 0.0
 try:
@@ -255,31 +256,44 @@ def render_light(img, key, actions):
 
 
 def _draw_glasses(img, g):
+    '''彩色镜框 + 琥珀镜片 + 高光,镜片中心用真实眼关键点(倾斜也跟)。'''
     ang = math.degrees(g['angle'])
-    cx, cy = g['eye_center']
-    r = int(g['eye_dist'] * 0.55)
-    lex = int(cx - g['eye_dist'] / 2)
-    rex = int(cx + g['eye_dist'] / 2)
-    for ex in (lex, rex):
-        cv2.ellipse(img, (int(ex), int(cy)), (r, int(r * 0.8)), ang, 0, 360, (0, 0, 0), 3)
-    cv2.line(img, (int(lex + r * 0.9), int(cy)), (int(rex - r * 0.9), int(cy)), (0, 0, 0), 3)
+    d = g['eye_dist']
+    r = max(4, int(d * 0.55))
+    rh = max(4, int(r * 0.8))
+    for (ex, ey) in (g['left_eye'], g['right_eye']):
+        c = (int(ex), int(ey))
+        cv2.ellipse(img, c, (r, rh), ang, 0, 360, (150, 110, 40), -1)    # 琥珀镜片填充
+        cv2.ellipse(img, c, (r, rh), ang, 0, 360, (40, 40, 180), 4)      # 蓝色粗框
+        cv2.circle(img, (int(ex - r * 0.32), int(ey - rh * 0.32)),
+                   max(2, r // 5), (245, 245, 245), -1)                  # 左上高光
+    lex, ley = g['left_eye']
+    rex, rey = g['right_eye']
+    cv2.line(img, (int(lex + r * 0.7), int(ley)), (int(rex - r * 0.7), int(rey)),
+             (40, 40, 180), 4)                                           # 鼻梁
 
 
 def _draw_hat(img, g):
+    '''红色三角帽 + 帽檐 + 帽顶小球,水平居中于人脸框上方。'''
     cx, top = g['hat_center']
     w = int(g['hat_w'] * 0.6)
     pts = np.array([[int(cx), int(top - w * 0.7)],
                     [int(cx - w / 2), int(top)],
                     [int(cx + w / 2), int(top)]], np.int32)
-    cv2.fillPoly(img, [pts], (60, 60, 220))
-    cv2.line(img, (int(cx - w * 0.7), int(top)), (int(cx + w * 0.7), int(top)), (40, 40, 160), 4)
+    cv2.fillPoly(img, [pts], (60, 60, 220))                              # 红色帽体
+    cv2.line(img, (int(cx - w * 0.7), int(top)), (int(cx + w * 0.7), int(top)),
+             (40, 40, 160), 4)                                           # 帽檐
+    cv2.circle(img, (int(cx), int(top - w * 0.7)),
+               max(3, w // 8), (30, 200, 255), -1)                       # 帽顶黄球
 
 
 def _draw_mustache(img, g):
+    '''深棕色八字胡,两片椭圆覆在嘴巴上方。'''
     cx, cy = g['mouth_center']
-    w = int(g['mouth_w'] * 0.5)
-    cv2.ellipse(img, (int(cx - w / 2), int(cy - 4)), (int(w / 2), 6), 0, 0, 360, (0, 0, 0), -1)
-    cv2.ellipse(img, (int(cx + w / 2), int(cy - 4)), (int(w / 2), 6), 0, 0, 360, (0, 0, 0), -1)
+    w = int(g['mouth_w'] * 0.55)
+    h = max(5, int(w * 0.28))
+    cv2.ellipse(img, (int(cx - w / 2), int(cy - 3)), (int(w / 2), h), 0, 0, 360, (45, 35, 30), -1)
+    cv2.ellipse(img, (int(cx + w / 2), int(cy - 3)), (int(w / 2), h), 0, 0, 360, (45, 35, 30), -1)
 
 
 def render_ar(img, key, actions):
@@ -314,7 +328,7 @@ def render_ar(img, key, actions):
 
 def render_motion(img, key, actions):
     '''M3 体感快门:摇一摇或中间触摸拍照(蜂鸣+LED+白闪+保存),叠加 AR 水平线辅助构图。'''
-    global imu_roll, imu_pitch, flash_until
+    global imu_roll, imu_pitch, flash_until, imu_last_t
     shot = None
     now = time.time()
     if imu_ok:
@@ -322,7 +336,12 @@ def render_motion(img, key, actions):
         a_mag = core.accel_to_a_mag(ax, ay, az)
         roll_a = core.accel_to_roll(ax, ay, az)
         pitch_a = core.accel_to_pitch(ax, ay, az)
-        dt = 0.03
+        # 真实帧间隔;首帧或卡顿(>0.2s)后兜底 0.03,避免积分跳变
+        if imu_last_t is None or not (0 < now - imu_last_t <= 0.2):
+            dt = 0.03
+        else:
+            dt = now - imu_last_t
+        imu_last_t = now
         if getattr(imu, "has_gyro", False):
             imu_roll = core.complementary(imu_roll, gx, roll_a, dt)
             imu_pitch = core.complementary(imu_pitch, gy, pitch_a, dt)
@@ -348,7 +367,7 @@ def render_motion(img, key, actions):
     dy = int(ll * math.sin(imu_roll))
     cv2.line(img, (cx - dx, cy - dy), (cx + dx, cy + dy), col, 2)
     cv2.line(img, (cx, cy - 12), (cx, cy + 12), col, 2)
-    text(img, f"水平 {roll_deg:+5.1f}°", (10, 36), col, 20)
+    text(img, f"水平 {roll_deg:+5.1f}°  俯仰 {math.degrees(imu_pitch):+5.1f}°", (10, 36), col, 20)
     if not imu_ok:
         text(img, "IMU 不可用 · 中间手动拍", (W // 2 - 140, H // 2), (0, 160, 255), 22)
     else:
