@@ -30,3 +30,20 @@ def parse_show(text):
     for mm in re.finditer(r'UUID:\s+.*\(([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})\)', text):
         out['uuids'].append(mm.group(1))
     return out
+
+
+def parse_devices(text):
+    '''解析 `bluetoothctl devices` -> [{'mac','name'}, ...]。'''
+    out = []
+    for m in re.finditer(r'^Device\s+([0-9A-Fa-f:]{17})\s+(.*)$', text, re.M):
+        out.append({'mac': m.group(1), 'name': m.group(2).strip()})
+    return out
+
+
+def paginate(items, page, per_page):
+    '''分页纯函数。返回 (当前页列表, 总页数)。page 越界自动夹到最后一页。'''
+    n = len(items)
+    total = max(1, (n + per_page - 1) // per_page)
+    page = max(0, min(page, total - 1))
+    start = page * per_page
+    return items[start:start + per_page], total
