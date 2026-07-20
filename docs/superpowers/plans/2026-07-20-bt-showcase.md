@@ -891,7 +891,10 @@ def _ping_loop():
     while not ping_stop:
         mac = selected_mac
         if mac:
-            res = btctl.l2ping_once(mac, timeout=3)
+            try:
+                res = btctl.l2ping_once(mac, timeout=3)
+            except Exception:
+                res = {'ok': False, 'ms': None}   # 任何异常都记为不可达,不让工作线程死掉
             with ping_lock:
                 ping_hist.append(res)
         time.sleep(1.0)

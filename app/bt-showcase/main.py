@@ -95,7 +95,10 @@ def _ping_loop():
     while not ping_stop:
         mac = selected_mac
         if mac:
-            res = btctl.l2ping_once(mac, timeout=3)
+            try:
+                res = btctl.l2ping_once(mac, timeout=3)
+            except Exception:
+                res = {'ok': False, 'ms': None}   # 任何异常都记为不可达,不让工作线程死掉
             with ping_lock:
                 ping_hist.append(res)
         time.sleep(1.0)
@@ -335,7 +338,7 @@ def render_range(img, key, actions):
     else:
         text(img, f"无响应/不可达   可达率 {rate:.0f}%", (10, 92), (0, 160, 255), 22)
 
-    # 柱状图:每条宽 12,高按 ms(上限 200ms 映射到 120px),失败画矮红条
+    # 柱状图:每条宽 10(间距 13),高按 ms(上限 200ms 映射到 120px),失败画矮红条
     bx, by = 20, 300
     for i, h in enumerate(hist):
         x = bx + i * 13
