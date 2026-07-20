@@ -30,6 +30,28 @@ FONT = "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
 FONT_H = 24
 MODES = ["适配器", "扫描", "测距"]
 
+import btctl
+
+# ----------------------------- M1 适配器状态 -------------------------
+adapter_lock = threading.Lock()
+adapter_info = {'available': False, 'mac': '', 'name': '', 'alias': '',
+                'class': '', 'powered': False, 'discoverable': False,
+                'pairable': False, 'discovering': False, 'uuids': []}
+adapter_stop = False
+
+
+def _adapter_loop():
+    '''每 ~1.2s 刷新一次适配器信息(后台线程)。'''
+    global adapter_info
+    while not adapter_stop:
+        info = btctl.adapter_info()
+        with adapter_lock:
+            adapter_info = info
+        time.sleep(1.2)
+
+
+threading.Thread(target=_adapter_loop, daemon=True).start()
+
 
 # ----------------------------- 文字 ---------------------------------
 ft = cv2.freetype.createFreeType2()
@@ -159,7 +181,32 @@ class Key:
 
 # ----------------------------- 模式渲染(占位)-------------------------
 def render_adapter(img, key, actions):
-    pass
+    '''M1 适配器:显示本机蓝牙信息,中间触摸切换可发现。'''
+    with adapter_lock:
+        a = dict(adapter_info)
+    while actions:
+        kind = actions.pop(0)
+        if kind[0] == "tap" and kind[1] == "CENTER" and a.get('available'):
+            btctl.set_discoverable(not a.get('discoverable'))
+            key.flash(led=True, dur=0.05)
+    y = 60
+    if not a.get('available'):
+        text(img, "蓝牙不可用", (W // 2 - 90, H // 2), (0, 160, 255), 30)
+        return
+    text(img, f"名称   {a.get('name','')}", (20, y), (255, 255, 255), 22); y += 32
+    text(img, f"MAC    {a.get('mac','')}", (20, y), (200, 200, 200), 22); y += 32
+    text(img, f"Class  {a.get('class','')}", (20, y), (200, 200, 200), 22); y += 32
+    text(img, f"供电   {'是' if a.get('powered') else '否'}", (20, y),
+         (100, 255, 100) if a.get('powered') else (0, 160, 255), 22); y += 32
+    disc = a.get('discoverable')
+    text(img, f"可发现 {'开' if disc else '关'}  <- 中间切换", (20, y),
+         (0, 255, 120) if disc else (0, 180, 255), 22); y += 32
+    text(img, f"可配对 {'是' if a.get('pairable') else '否'}", (20, y),
+         (200, 200, 200), 22); y += 32
+    # 支持的 profile(最多显示 6 个 UUID)
+    text(img, "支持 profile:", (20, y), (180, 180, 255), 20); y += 26
+    for u in a.get('uuids', [])[:6]:
+        text(img, "  " + u, (20, y), (160, 160, 160), 16); y += 20
 
 
 def render_scan(img, key, actions):
