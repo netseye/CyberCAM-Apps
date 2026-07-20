@@ -51,8 +51,8 @@ BTN_TOUCH = 0x14a
 
 
 def _eviocgabs(fd, axis):
-    '''读 ABS 轴的 min/max(EVIOCGABS)。'''
-    op = (3 << 30) | (24 << 16) | (0x45 << 8) | (0x40 + axis)
+    '''读 ABS 轴的 min/max(EVIOCGABS)。dir=READ=2(EVIOCGABS 是 _IOR;用 3=_IOWR 会被内核拒为 EINVAL)。'''
+    op = (2 << 30) | (24 << 16) | (0x45 << 8) | (0x40 + axis)
     buf = bytearray(24)
     try:
         fcntl.ioctl(fd, op, buf, True)
