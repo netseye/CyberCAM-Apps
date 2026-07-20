@@ -53,6 +53,34 @@ def _adapter_loop():
 threading.Thread(target=_adapter_loop, daemon=True).start()
 
 
+# ----------------------------- M2 扫描状态 ---------------------------
+scan_lock = threading.Lock()
+scan_devices = []          # [{'mac','name'}]
+scan_state = "idle"        # 'idle' | 'scanning'
+scan_page = 0
+selected_mac = None        # 全局,供 M3 使用
+
+PER_PAGE = 8
+
+
+def start_scan():
+    '''后台扫描一次(约 8 秒)。已扫描中则忽略。'''
+    global scan_devices, scan_state
+    with scan_lock:
+        if scan_state == "scanning":
+            return
+        scan_state = "scanning"
+
+    def work():
+        global scan_devices, scan_state
+        devs = btctl.scan_devices(8)
+        with scan_lock:
+            scan_devices = devs
+            scan_state = "idle"
+
+    threading.Thread(target=work, daemon=True).start()
+
+
 # ----------------------------- 文字 ---------------------------------
 ft = cv2.freetype.createFreeType2()
 ft.loadFontData(FONT, 0)
@@ -210,7 +238,43 @@ def render_adapter(img, key, actions):
 
 
 def render_scan(img, key, actions):
-    pass
+    '''M2 扫描:中间触摸开始/重扫;有设备时点选(循环高亮)作为测距目标。'''
+    global scan_page, selected_mac
+    with scan_lock:
+        st = scan_state
+        devs = list(scan_devices)
+    while actions:
+        actions.pop(0)
+        if st == "scanning":
+            scan_page = 0
+        elif not devs:
+            start_scan()
+            scan_page = 0
+        else:
+            cur = next((i for i, d in enumerate(devs) if d['mac'] == selected_mac), -1)
+            nxt = (cur + 1) % len(devs)
+            selected_mac = devs[nxt]['mac']
+            scan_page = nxt // PER_PAGE   # 选中设备自动翻到所在页,高亮始终可见
+            key.flash(led=True, dur=0.03)
+    text(img, "中间触摸开始/重新扫描", (10, 36), (200, 200, 200), 20)
+    if st == "scanning":
+        text(img, "扫描中…", (W // 2 - 50, H // 2), (0, 200, 255), 28)
+        return
+    if not devs:
+        text(img, "无设备(中间重扫)", (W // 2 - 110, H // 2), (160, 160, 160), 22)
+        return
+    page, total = core.paginate(devs, scan_page, PER_PAGE)
+    text(img, f"共 {len(devs)} 台  {scan_page + 1}/{total}", (W - 200, 36), (180, 180, 255), 18)
+    y = 70
+    for i, d in enumerate(page):
+        idx = scan_page * PER_PAGE + i
+        mac, name = d['mac'], d['name'][:16]
+        sel = (mac == selected_mac)
+        col = (0, 255, 120) if sel else (220, 220, 220)
+        text(img, f"{idx + 1}. {name}", (20, y), col, 20)
+        text(img, mac, (320, y), (150, 150, 150), 16)
+        y += 28
+    text(img, "点选设备高亮 -> 测距目标", (10, H - 50), (140, 140, 140), 16)
 
 
 def render_range(img, key, actions):
