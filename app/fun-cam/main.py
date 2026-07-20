@@ -224,6 +224,8 @@ imu_last_t = None
 shake = core.ShakeDetector(spike_g=2.5, debounce_s=1.5)
 flash_until = 0.0
 _drawn_roll = None    # 水平线显示死区:上次实际画线的 roll(deg)
+_disp_roll = None     # 显示端 EMA 平滑后的 roll(deg);None=未初始化(首帧用原值播种)
+_snap_in = False      # 吸附水平迟滞状态:当前是否处在「已对齐」吸附区
 _recal_guard = 0.0    # 重新校准后短暂忽略 tap(长按抬笔会产生一次 tap)
 try:
     from qmi8658 import open_imu
@@ -236,13 +238,15 @@ except Exception as e:
 
 def _do_calibrate(n=150):
     '''校准陀螺仪零偏,并按当前加速度重置滤波器(避免校准后跳变)。无 UI。'''
-    global imu_roll, imu_pitch, imu_last_t, _drawn_roll
+    global imu_roll, imu_pitch, imu_last_t, _drawn_roll, _disp_roll, _snap_in
     imu.calibrate(n)
     ax, ay, az, *_ = imu.read()
     imu_roll = core.accel_to_roll(ax, ay, az)
     imu_pitch = core.accel_to_pitch(ax, ay, az)
     imu_last_t = None
     _drawn_roll = None
+    _disp_roll = None      # 重置显示平滑,让 EMA 从新角度重新播种
+    _snap_in = False
 
 
 def _startup_calibrate_prompt():
@@ -365,7 +369,7 @@ def render_ar(img, key, actions):
 
 def render_motion(img, key, actions):
     '''M3 体感快门:摇一摇或中间触摸拍照(蜂鸣+LED+白闪+保存),叠加 AR 水平线辅助构图。'''
-    global imu_roll, imu_pitch, flash_until, imu_last_t, _recal_guard, _drawn_roll
+    global imu_roll, imu_pitch, flash_until, imu_last_t, _recal_guard, _drawn_roll, _disp_roll, _snap_in
     shot = None
     now = time.time()
     if imu_ok:
@@ -400,21 +404,37 @@ def render_motion(img, key, actions):
         if save_shot(shot, "snap"):
             key.flash(led=True, dur=0.06)
         flash_until = now + 0.15
-    # AR 水平构图线(过中心,随 roll 旋转,水平时变绿)
-    # 显示死区:量化到 0.5° 台阶,变化 <0.3° 则保持上次画的角度 → 消除残抖
+    # AR 水平构图线(过中心,随 roll 旋转)。三段「准专业级」稳定处理
+    # (对标 Sony/Canon/iPhone 的电子水平仪:融合 ✅ + 显示低通 + 吸附死区 + 到位反馈):
+    #  ① 显示端 EMA(~0.3s)压手抖/残噪;② 吸附水平(进区 ±1°、出区 ±2° 迟滞)
+    #     锁成 0° 并蜂鸣确认;③ 量化到 0.5° 台阶、变化 <0.3° 不重绘。
     roll_deg = math.degrees(imu_roll)
-    q = round(roll_deg / 0.5) * 0.5
+    if _disp_roll is None:
+        _disp_roll = roll_deg
+    else:
+        _disp_roll = 0.88 * _disp_roll + 0.12 * roll_deg          # ① EMA 低通
+    a = abs(_disp_roll)
+    if _snap_in:
+        if a > 2.0:                                                # ② 出吸附区(迟滞防边界抖)
+            _snap_in = False
+    elif a < 1.0:                                                  #    进吸附区
+        _snap_in = True
+        key.flash(dur=0.04)                                        #    短鸣=已对齐(iPhone 触觉的等价)
+    shown = 0.0 if _snap_in else _disp_roll
+    q = round(shown / 0.5) * 0.5                                   # ③ 量化
     if _drawn_roll is None or abs(q - _drawn_roll) >= 0.3:
         _drawn_roll = q
-    col = core.level_color(_drawn_roll)
+    col = (0, 255, 120) if _snap_in else core.level_color(_drawn_roll)
     cx, cy = W // 2, H // 2
     ll = 160
     droll = math.radians(_drawn_roll)
     dx = int(ll * math.cos(droll))
     dy = int(ll * math.sin(droll))
-    cv2.line(img, (cx - dx, cy - dy), (cx + dx, cy + dy), col, 2)
-    cv2.line(img, (cx, cy - 12), (cx, cy + 12), col, 2)
-    text(img, f"水平 {_drawn_roll:+5.1f}°  俯仰 {math.degrees(imu_pitch):+5.1f}°", (10, 36), col, 20)
+    thick = 3 if _snap_in else 2                                   # 锁定时加粗,强化「已对齐」观感
+    cv2.line(img, (cx - dx, cy - dy), (cx + dx, cy + dy), col, thick)
+    cv2.line(img, (cx, cy - 12), (cx, cy + 12), col, thick)
+    tag = "(已对齐) " if _snap_in else ""
+    text(img, f"水平 {tag}{_drawn_roll:+5.1f}°  俯仰 {math.degrees(imu_pitch):+5.1f}°", (10, 36), col, 20)
     has_gyro = imu_ok and getattr(imu, "has_gyro", False)
     if not imu_ok:
         text(img, "IMU 不可用 · 中间手动拍", (W // 2 - 140, H // 2), (0, 160, 255), 22)
