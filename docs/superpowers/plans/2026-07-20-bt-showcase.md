@@ -793,7 +793,10 @@ def start_scan():
 
     def work():
         global scan_devices, scan_state
-        devs = btctl.scan_devices(8)
+        try:
+            devs = btctl.scan_devices(8)
+        except Exception:
+            devs = []   # 任何异常都给空列表,绝不卡在 "scanning"
         with scan_lock:
             scan_devices = devs
             scan_state = "idle"
@@ -825,12 +828,14 @@ def render_scan(img, key, actions):
             selected_mac = devs[nxt]['mac']
             scan_page = nxt // PER_PAGE   # 选中设备自动翻到所在页,高亮始终可见
             key.flash(led=True, dur=0.03)
-    text(img, "中间触摸开始/重新扫描", (10, 36), (200, 200, 200), 20)
     if st == "scanning":
+        text(img, "扫描约需 8 秒…", (10, 36), (200, 200, 200), 20)
         text(img, "扫描中…", (W // 2 - 50, H // 2), (0, 200, 255), 28)
         return
+    text(img, "中间触摸点选测距目标(高亮后切到测距)" if devs else "中间触摸开始扫描",
+         (10, 36), (200, 200, 200), 20)
     if not devs:
-        text(img, "无设备(中间重扫)", (W // 2 - 110, H // 2), (160, 160, 160), 22)
+        text(img, "未发现设备 · 中间重扫", (W // 2 - 130, H // 2), (160, 160, 160), 22)
         return
     page, total = core.paginate(devs, scan_page, PER_PAGE)
     text(img, f"共 {len(devs)} 台  {scan_page + 1}/{total}", (W - 200, 36), (180, 180, 255), 18)
