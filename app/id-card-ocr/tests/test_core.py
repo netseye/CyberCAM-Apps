@@ -93,6 +93,38 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(result["sex"], "女")
         self.assertTrue(result["id_valid"])
 
+    def test_parses_clean_roi_canvas_without_labels(self):
+        rows = [
+            {"text": "测试用户", "x": 18, "y": 22, "w": 130, "h": 30},
+            {"text": "汉", "x": 18, "y": 88, "w": 26, "h": 25},
+            {"text": "1949年12月31日", "x": 18, "y": 145,
+             "w": 220, "h": 28},
+            {"text": "测试省测试市", "x": 18, "y": 208,
+             "w": 180, "h": 25},
+            {"text": "测试路一号", "x": 18, "y": 250,
+             "w": 150, "h": 25},
+            {"text": "11010519491231002X", "x": 18, "y": 345,
+             "w": 300, "h": 30},
+        ]
+        result = core.parse_id_card_roi_rows(rows)
+        self.assertEqual(result["name"], "测试用户")
+        self.assertEqual(result["ethnicity"], "汉")
+        self.assertEqual(result["address"], "测试省测试市测试路一号")
+        self.assertEqual(result["birth"], "1949-12-31")
+        self.assertEqual(result["sex"], "女")
+        self.assertTrue(result["id_valid"])
+        self.assertEqual(result["field_count"], 6)
+
+    def test_roi_parser_ignores_text_in_separator_gaps(self):
+        rows = [
+            {"text": "噪声", "x": 20, "y": 72, "w": 40, "h": 2},
+            {"text": "11010519491231002X", "x": 18, "y": 345,
+             "w": 300, "h": 30},
+        ]
+        result = core.parse_id_card_roi_rows(rows)
+        self.assertEqual(result["name"], "")
+        self.assertTrue(result["id_valid"])
+
 
 class StabilityTests(unittest.TestCase):
     def test_requires_stable_hold(self):

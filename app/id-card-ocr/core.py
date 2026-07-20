@@ -22,6 +22,16 @@ ETHNICITIES = {
 ID_WEIGHTS = (7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2)
 ID_CHECK_CODES = "10X98765432"
 
+# 与 vision.OCR_REGIONS 的目标画布纵向分区对应。放在纯逻辑层中可让解析测试
+# 不依赖 OpenCV；分区之间留白，OCR 框中心不会落在边界上。
+OCR_ROI_BANDS = {
+    "name": (4 / 404, 72 / 404),
+    "ethnicity": (76 / 404, 126 / 404),
+    "birth": (130 / 404, 190 / 404),
+    "address": (194 / 404, 318 / 404),
+    "id_number": (326 / 404, 402 / 404),
+}
+
 
 def _compact(text):
     '''统一全半角标点并去掉 OCR 常见空白。'''
@@ -315,6 +325,63 @@ def parse_id_card_rows(rows, card_width=640, card_height=404):
 
     required = ("name", "sex", "ethnicity", "birth", "address", "id_number")
     result["field_count"] = sum(bool(result[field]) for field in required)
+    return result
+
+
+def parse_id_card_roi_rows(rows, canvas_height=404):
+    '''解析固定 ROI 画布的 OCR 框，不依赖任何固定标签被识别。
+
+    每个框按纵向中心归入姓名/民族/出生/地址/号码区域，再借用统一的身份
+    证号码校验和派生逻辑。``raw_lines`` 仍保留识别器原始输出供人工核对。
+    '''
+    ordered = order_ocr_rows(rows)
+    grouped = {field: [] for field in OCR_ROI_BANDS}
+    for row in ordered:
+        value = _compact(row.get("text", ""))
+        if not value:
+            continue
+        center_y = row.get("y", 0) + row.get("h", 0) / 2.0
+        normalized_y = center_y / max(1, canvas_height)
+        for field, (y_min, y_max) in OCR_ROI_BANDS.items():
+            if y_min <= normalized_y < y_max:
+                grouped[field].append(value)
+                break
+
+    pseudo_lines = []
+    name_text = "".join(grouped["name"])
+    name = _clean_name(name_text)
+    if name:
+        pseudo_lines.append("姓名" + name)
+
+    ethnicity_text = "".join(grouped["ethnicity"])
+    ethnicity_match = None
+    # 优先最长民族名，避免“俄罗斯”被提前匹配成更短片段。
+    for ethnicity in sorted(ETHNICITIES, key=len, reverse=True):
+        if ethnicity in ethnicity_text:
+            ethnicity_match = ethnicity
+            break
+    if ethnicity_match:
+        pseudo_lines.append("民族" + ethnicity_match)
+
+    birth_text = "".join(grouped["birth"])
+    birth = _extract_date(birth_text)
+    if birth:
+        pseudo_lines.append("出生" + birth)
+
+    address_parts = []
+    for value in grouped["address"]:
+        cleaned = value.replace("住址", "").strip("：:，,。 ")
+        if cleaned and re.search(r"[\u3400-\u9fff0-9]", cleaned):
+            address_parts.append(cleaned)
+    if address_parts:
+        pseudo_lines.append("住址" + "".join(address_parts))
+
+    pseudo_lines.extend(grouped["id_number"])
+    result = parse_id_card(pseudo_lines)
+    result["raw_lines"] = [
+        str(row.get("text", "")).strip() for row in ordered
+        if str(row.get("text", "")).strip()
+    ]
     return result
 
 

@@ -95,17 +95,20 @@ def _result_score(parsed, rows):
 
 
 def recognize_card(runtime, card):
-    '''识别正向；字段过少时自动尝试 180°，保留得分更高的一次。'''
-    rows = runtime.run(card)
-    parsed = core.parse_id_card_rows(rows, card.shape[1], card.shape[0])
+    '''固定 ROI 增强后识别；字段过少时尝试 180°并保留高分结果。'''
+    canvas = vision.build_id_ocr_canvas(card)
+    rows = runtime.run(canvas)
+    parsed = core.parse_id_card_roi_rows(rows, canvas.shape[0])
     best = (parsed, rows)
     if parsed["field_count"] < 3 or not parsed["id_number"]:
         rotated = cv2.rotate(card, cv2.ROTATE_180)
-        other_rows = runtime.run(rotated)
-        other = core.parse_id_card_rows(
-            other_rows, rotated.shape[1], rotated.shape[0])
+        other_canvas = vision.build_id_ocr_canvas(rotated)
+        other_rows = runtime.run(other_canvas)
+        other = core.parse_id_card_roi_rows(other_rows, other_canvas.shape[0])
         if _result_score(other, other_rows) > _result_score(parsed, rows):
             best = (other, other_rows)
+        other_canvas = None
+    canvas = None
     return best
 
 
@@ -292,7 +295,7 @@ def compose_preview(frame, corners, ready, light_on=False, notice=None):
     return screen
 
 
-def compose_processing(message="正在透视矫正并识别…"):
+def compose_processing(message="正在增强字段并识别…"):
     screen = _base_screen()
     cv2.rectangle(screen, (95, 145), (545, 330), (24, 29, 36), -1)
     cv2.rectangle(screen, (95, 145), (545, 330), (55, 68, 78), 1)
@@ -499,8 +502,8 @@ def main():
 
             if action == "SCAN":
                 key.pulse(now)
-                processing = ("正在识别标准取景框…" if last_corners is None
-                              else "正在透视矫正并识别…")
+                processing = ("正在增强标准字段…" if last_corners is None
+                              else "正在矫正并增强字段…")
                 _show(compose_processing(processing))
                 card = None
                 try:

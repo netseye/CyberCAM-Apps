@@ -32,6 +32,18 @@ class VisionTests(unittest.TestCase):
         frame = np.zeros((360, 640, 3), np.uint8)
         self.assertIsNone(vision.find_id_card(frame))
 
+    def test_builds_clean_roi_canvas_without_fixed_labels(self):
+        card = np.full((vision.WARP_H, vision.WARP_W, 3), 235, np.uint8)
+        # 模拟姓名值和左侧固定标签；画布只应包含 x>=0.16W 的值区。
+        cv2.rectangle(card, (20, 38), (75, 58), (0, 0, 0), -1)
+        cv2.rectangle(card, (120, 38), (225, 58), (0, 0, 0), -1)
+        canvas = vision.build_id_ocr_canvas(card)
+        self.assertEqual(canvas.shape, (vision.OCR_CANVAS_H,
+                                        vision.OCR_CANVAS_W, 3))
+        self.assertGreater(canvas[4:72].mean(), 200)
+        self.assertLess(canvas[4:72, :360].min(), 80)
+        self.assertTrue(np.all(canvas[72:76] == 255))
+
 
 if __name__ == "__main__":
     unittest.main()
