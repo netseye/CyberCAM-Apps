@@ -264,7 +264,7 @@ def render_adapter(img, key, actions):
 
 
 def render_scan(img, key, actions):
-    '''M2 扫描:中间触摸开始/重扫;有设备时点选(循环高亮)作为测距目标。'''
+    '''M2 扫描:无设备时中间触摸开始扫描;有设备时点选(循环高亮)作为测距目标。'''
     global scan_page, selected_mac
     with scan_lock:
         st = scan_state

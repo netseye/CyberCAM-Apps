@@ -27,12 +27,21 @@ CyberCAM 上的蓝牙能力展示 app,三模式:**适配器信息 / 扫描周边
 - **重新扫描**:M2 首次扫描后,中间触摸用于点选目标(不再触发重扫);如需扫描新出现的设备,重启 app 即可(首次 8 秒扫描覆盖周边)。
 - 触摸区域按屏幕左/中/右三段判别;触摸不可用时仍可用板载按键切模式。
 
+## 依赖(设备自带)
+
+- Python 3 + `opencv-python`(含 `cv2.freetype`)+ `numpy` + `walnutpi`
+- 中文字体 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`
+- BlueZ `bluetoothctl`(D-Bus,非 root)+ `l2ping`(sudo,pi 免密)
+- 触摸屏 `/dev/input/event0` + 板载 `board.KEY/LED/BEEP`(缺失时自动降级)
+
 ## 文件
 
+- `app.txt` / `run.sh` — 系统启动器注册(`index=22`)与入口。
 - `core.py` — 纯解析逻辑(parse_show/parse_devices/parse_l2ping/paginate),PC 可单测。
 - `btctl.py` — subprocess 封装(adapter_info/scan_devices/set_discoverable/l2ping_once)。
 - `main.py` — Display/Touch/Key/模式路由 + 3 渲染 + 后台线程。
 - `tests/` — core 的纯函数单测(运行 `python3 tests/test_*.py`)。
+- `gen_icon.py` — 生成 `icon.png`(256×256,设备上用 cv2 画)的脚本。
 
 ## 部署
 
