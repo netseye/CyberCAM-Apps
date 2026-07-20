@@ -5,12 +5,12 @@ import sys
 
 import cv2
 import numpy as np
-from walnutpi import kpu
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 import core  # noqa: E402
+import main as app_main  # noqa: E402
 import vision  # noqa: E402
 
 
@@ -40,34 +40,33 @@ def main():
     put(ft, card, "公民身份号码", 34, 340, 23)
     put(ft, card, "11010519491231002X", 195, 334, 27)
 
-    detector = kpu.OCR(
-        os.path.join(ROOT, "ocr_det_int16.kmodel"),
-        os.path.join(ROOT, "ocr_rec_int16.kmodel"),
-        os.path.join(ROOT, "dict.txt"), 640, (512, 32))
     canvas = vision.build_id_ocr_canvas(card)
-    boxes = detector.run(canvas, 0.25) or []
-    print("synthetic_roi_boxes=", len(boxes))
-    rows = []
-    for box in boxes:
-        print("%.3f|x=%d y=%d w=%d h=%d|%s" % (
-            float(box.reliability), int(box.x), int(box.y), int(box.w),
-            int(box.h), str(box.text)))
-        rows.append({
-            "text": str(box.text), "x": int(box.x), "y": int(box.y),
-            "w": int(box.w), "h": int(box.h),
-            "confidence": float(box.reliability),
-        })
-    if not boxes:
-        raise SystemExit("KPU OCR returned no text boxes")
-    result = core.parse_id_card_roi_rows(rows)
-    print("field_count=", result["field_count"])
-    print("id_valid=", result["id_valid"])
-    if result["name"] != "测试用户":
-        raise SystemExit("name mismatch")
-    if result["address"] != "测试省测试市测试路一号":
-        raise SystemExit("address mismatch")
-    if not result["id_valid"]:
-        raise SystemExit("ID number checksum failed")
+    runtime = app_main.OCRRuntime()
+    cycles = max(1, int(os.environ.get("OCR_SMOKE_CYCLES", "1")))
+    try:
+        for cycle in range(1, cycles + 1):
+            try:
+                rows = runtime.run(canvas)
+                print("cycle=%d synthetic_roi_boxes=%d" % (cycle, len(rows)))
+                for row in rows:
+                    print("%.3f|x=%d y=%d w=%d h=%d|%s" % (
+                        row["confidence"], row["x"], row["y"], row["w"],
+                        row["h"], row["text"]))
+                if not rows:
+                    raise SystemExit("KPU OCR returned no text boxes")
+                result = core.parse_id_card_roi_rows(rows)
+                print("field_count=", result["field_count"])
+                print("id_valid=", result["id_valid"])
+                if result["name"] != "测试用户":
+                    raise SystemExit("name mismatch")
+                if result["address"] != "测试省测试市测试路一号":
+                    raise SystemExit("address mismatch")
+                if not result["id_valid"]:
+                    raise SystemExit("ID number checksum failed")
+            finally:
+                runtime.unload()
+    finally:
+        runtime.unload()
 
 
 if __name__ == "__main__":

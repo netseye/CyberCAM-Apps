@@ -86,8 +86,46 @@ class OCRRuntime:
         return core.order_ocr_rows(rows)
 
     def unload(self):
+        detector = self.detector
+        if detector is None:
+            return True
+
+        # walnutpi.kpu.OCR 的后台线程以绑定方法 self._worker_loop 为 target，
+        # 会形成 OCR -> Thread -> bound method -> OCR 的强引用环。只赋 None
+        # 不会触发 __del__，det/rec 的 Interpreter 与 AI2D 因而持续占用 CMA。
+        # 显式执行其析构意图：通知、唤醒、等待线程结束，再拆除子模型引用。
+        shutdown = getattr(detector, "_shutdown_event", None)
+        if shutdown is not None:
+            shutdown.set()
+        task_queue = getattr(detector, "_task_queue", None)
+        if task_queue is not None:
+            try:
+                task_queue.put_nowait(None)
+            except Exception:
+                pass
+        worker = getattr(detector, "_worker_thread", None)
+        if worker is not None and worker.is_alive():
+            worker.join(timeout=1.5)
+        if worker is not None and worker.is_alive():
+            print("[memory] OCR 工作线程未退出，保留模型避免并发释放")
+            return False
+
         self.detector = None
+        detector.results = []
+        # 子类没有公开 close/deinit；清空原生 Interpreter/AI2D 引用，确保
+        # 它们在工作线程已经停止后按确定顺序析构。
+        for child_name in ("det", "rec"):
+            child = getattr(detector, child_name, None)
+            if child is not None:
+                for resource_name in ("ai2d", "kpu"):
+                    if hasattr(child, resource_name):
+                        setattr(child, resource_name, None)
+                if hasattr(child, "results"):
+                    child.results = []
+                setattr(detector, child_name, None)
+        detector = None
         gc.collect()
+        return True
 
 
 def _result_score(parsed, rows):
