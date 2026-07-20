@@ -1,0 +1,4 @@
+#APP信息配置文件/APP Config information
+name_cn="身份证OCR"
+name_en="ID Card OCR"
+index=23

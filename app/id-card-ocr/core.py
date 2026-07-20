@@ -1,0 +1,379 @@
+'''身份证 OCR 的纯逻辑层。
+
+不依赖 cv2 / walnutpi，便于在开发机上测试字段解析、身份证校验、
+卡片稳定判定和触摸区域映射。
+'''
+
+import datetime
+import math
+import re
+
+
+FIELD_LABELS = ("姓名", "性别", "民族", "出生", "住址", "公民身份号码")
+ETHNICITIES = {
+    "汉", "蒙古", "回", "藏", "维吾尔", "苗", "彝", "壮", "布依", "朝鲜",
+    "满", "侗", "瑶", "白", "土家", "哈尼", "哈萨克", "傣", "黎", "傈僳",
+    "佤", "畲", "高山", "拉祜", "水", "东乡", "纳西", "景颇", "柯尔克孜",
+    "土", "达斡尔", "仫佬", "羌", "布朗", "撒拉", "毛南", "仡佬", "锡伯",
+    "阿昌", "普米", "塔吉克", "怒", "乌孜别克", "俄罗斯", "鄂温克", "德昂",
+    "保安", "裕固", "京", "塔塔尔", "独龙", "鄂伦春", "赫哲", "门巴", "珞巴",
+    "基诺",
+}
+ID_WEIGHTS = (7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2)
+ID_CHECK_CODES = "10X98765432"
+
+
+def _compact(text):
+    '''统一全半角标点并去掉 OCR 常见空白。'''
+    return re.sub(r"\s+", "", str(text).replace("：", ":").strip())
+
+
+def _value_after_label(line, label):
+    pos = line.find(label)
+    if pos < 0:
+        return ""
+    value = line[pos + len(label):].lstrip(":")
+    stops = []
+    for other in FIELD_LABELS:
+        if other == label:
+            continue
+        at = value.find(other)
+        if at >= 0:
+            stops.append(at)
+    if stops:
+        value = value[:min(stops)]
+    return value.strip("：:·,，。 ")
+
+
+def normalize_id_candidate(text):
+    '''只在疑似身份证号中纠正常见的拉丁字母/数字混淆。'''
+    compact = re.sub(r"[^0-9A-Za-z]", "", str(text)).upper()
+    if len(compact) < 15:
+        return compact
+    # 身份证前 17 位只能是数字，末位允许 X。
+    trans = str.maketrans({
+        "O": "0", "Q": "0", "D": "0", "I": "1", "L": "1",
+        "Z": "2", "S": "5", "B": "8",
+    })
+    return compact[:-1].translate(trans) + compact[-1:].translate(trans)
+
+
+def id_checksum(number17):
+    '''返回 17 位本体对应的 GB 11643 校验字符。'''
+    if not re.fullmatch(r"\d{17}", str(number17)):
+        return None
+    total = sum(int(ch) * weight for ch, weight in zip(number17, ID_WEIGHTS))
+    return ID_CHECK_CODES[total % 11]
+
+
+def is_valid_id_number(number):
+    '''校验 18 位居民身份证号码，包括日期和校验位。'''
+    number = str(number).upper()
+    if not re.fullmatch(r"\d{17}[0-9X]", number):
+        return False
+    try:
+        datetime.datetime.strptime(number[6:14], "%Y%m%d")
+    except ValueError:
+        return False
+    return id_checksum(number[:17]) == number[-1]
+
+
+def mask_id_number(number):
+    '''结果页默认仅显示身份证号前 6 位和后 4 位。'''
+    number = str(number)
+    if len(number) < 10:
+        return "未识别" if not number else "*" * len(number)
+    return number[:6] + "*" * (len(number) - 10) + number[-4:]
+
+
+def _find_id_number(lines):
+    candidates = []
+    for line in lines:
+        compact = normalize_id_candidate(line)
+        candidates.extend(re.findall(r"\d{17}[0-9X]", compact))
+    # OCR 偶尔会把号码从两行拆开，再尝试在合并文本中搜索。
+    merged = normalize_id_candidate("".join(lines))
+    candidates.extend(re.findall(r"\d{17}[0-9X]", merged))
+    unique = []
+    for candidate in candidates:
+        if candidate not in unique:
+            unique.append(candidate)
+    for candidate in unique:
+        if is_valid_id_number(candidate):
+            return candidate, True
+    return (unique[0], False) if unique else ("", False)
+
+
+def _extract_date(text):
+    match = re.search(
+        r"((?:18|19|20)\d{2})[年./-]?([01]?\d)[月./-]?([0-3]?\d)日?", text)
+    if not match:
+        return ""
+    year, month, day = map(int, match.groups())
+    try:
+        date = datetime.date(year, month, day)
+    except ValueError:
+        return ""
+    return date.strftime("%Y-%m-%d")
+
+
+def _clean_name(value):
+    match = re.search(r"[\u3400-\u9fff·]{2,20}", value)
+    return match.group(0) if match else value[:20]
+
+
+def order_ocr_rows(rows):
+    '''把带 x/y/h 的 OCR 框按真实阅读行排序。
+
+    同一基线上的“性别/男/民族/汉”即使 y 有几像素误差，也先按 x 排列，
+    避免直接 ``(y, x)`` 排序打乱字段和值。
+    '''
+    groups = []
+    for row in sorted(rows, key=lambda item: item.get("y", 0)):
+        center = row.get("y", 0) + row.get("h", 0) / 2.0
+        height = max(1.0, float(row.get("h", 1)))
+        chosen = None
+        for group in groups:
+            threshold = max(8.0, 0.55 * max(height, group["height"]))
+            if abs(center - group["center"]) <= threshold:
+                chosen = group
+                break
+        if chosen is None:
+            groups.append({"center": center, "height": height, "rows": [row]})
+        else:
+            chosen["rows"].append(row)
+            count = len(chosen["rows"])
+            chosen["center"] += (center - chosen["center"]) / count
+            chosen["height"] = max(chosen["height"], height)
+    groups.sort(key=lambda group: group["center"])
+    return [row for group in groups
+            for row in sorted(group["rows"], key=lambda item: item.get("x", 0))]
+
+
+def parse_id_card(lines):
+    '''把按阅读顺序排列的 OCR 行解析成身份证正面字段。
+
+    即便标签未全部识别，也会用合法身份证号回填出生日期和性别。
+    原始行原样留在 ``raw_lines``，供结果页人工核对。
+    '''
+    raw_lines = [str(line).strip() for line in lines if str(line).strip()]
+    compact_lines = [_compact(line) for line in raw_lines]
+    result = {
+        "name": "", "sex": "", "ethnicity": "", "birth": "",
+        "address": "", "id_number": "", "id_valid": False,
+        "raw_lines": raw_lines, "warnings": [],
+    }
+
+    address_parts = []
+    collecting_address = False
+    pending_field = None
+    for line in compact_lines:
+        has_any_label = any(label in line for label in FIELD_LABELS)
+        if pending_field and not has_any_label:
+            if pending_field == "name":
+                result["name"] = _clean_name(line)
+            elif pending_field == "sex":
+                match = re.search(r"[男女]", line)
+                result["sex"] = match.group(0) if match else ""
+            elif pending_field == "ethnicity":
+                match = re.search(r"[\u3400-\u9fff]{1,8}", line)
+                result["ethnicity"] = match.group(0) if match else ""
+            elif pending_field == "birth":
+                result["birth"] = _extract_date(line)
+            pending_field = None
+        elif pending_field and has_any_label:
+            # 未识别到值就遇到了下一个字段，不能把后续地址误当成旧字段值。
+            pending_field = None
+
+        if "姓名" in line and not result["name"]:
+            result["name"] = _clean_name(_value_after_label(line, "姓名"))
+            if not result["name"]:
+                pending_field = "name"
+
+        if "性别" in line and not result["sex"]:
+            sex_value = _value_after_label(line, "性别")
+            match = re.search(r"[男女]", sex_value)
+            if match:
+                result["sex"] = match.group(0)
+            else:
+                pending_field = "sex"
+
+        if "民族" in line and not result["ethnicity"]:
+            value = _value_after_label(line, "民族")
+            match = re.search(r"[\u3400-\u9fff]{1,8}", value)
+            if match:
+                result["ethnicity"] = match.group(0)
+            else:
+                pending_field = "ethnicity"
+
+        if "出生" in line and not result["birth"]:
+            result["birth"] = _extract_date(_value_after_label(line, "出生"))
+            if not result["birth"]:
+                pending_field = "birth"
+
+        if "住址" in line:
+            collecting_address = True
+            value = _value_after_label(line, "住址")
+            if value:
+                address_parts.append(value)
+            continue
+
+        has_id_label = ("公民身份号码" in line or "身份号码" in line)
+        if has_id_label or re.search(r"\d{17}[0-9Xx]", normalize_id_candidate(line)):
+            collecting_address = False
+        elif collecting_address:
+            # 过滤误入地址段的已知标签行。
+            if not any(label in line for label in FIELD_LABELS[:-2]):
+                address_parts.append(line)
+
+    result["address"] = "".join(address_parts).strip("：:，,。 ")
+    number, valid = _find_id_number(compact_lines)
+    result["id_number"] = number
+    result["id_valid"] = valid
+
+    if number and len(number) == 18:
+        birth_from_id = _extract_date(number[6:14])
+        if not result["birth"]:
+            result["birth"] = birth_from_id
+        elif birth_from_id and result["birth"] != birth_from_id:
+            result["warnings"].append("出生日期与身份证号不一致")
+        sex_from_id = "男" if int(number[16]) % 2 else "女"
+        if not result["sex"]:
+            result["sex"] = sex_from_id
+        elif result["sex"] != sex_from_id:
+            result["warnings"].append("性别与身份证号不一致")
+        if not valid:
+            result["warnings"].append("身份证号码校验未通过")
+
+    required = ("name", "sex", "ethnicity", "birth", "address", "id_number")
+    result["field_count"] = sum(bool(result[field]) for field in required)
+    return result
+
+
+def parse_id_card_rows(rows, card_width=640, card_height=404):
+    '''结合二代身份证固定版式解析 OCR 框。
+
+    通用 OCR 对较小的“姓名/性别/民族”标签容易误识别，但往往能正确读出
+    右侧字段值。本函数先走标签解析，再用标准正面版式坐标补齐缺失值；
+    身份证号的校验与派生字段仍由 :func:`parse_id_card` 负责。
+    '''
+    ordered = order_ocr_rows(rows)
+    result = parse_id_card([row.get("text", "") for row in ordered])
+
+    def center(row):
+        return (row.get("x", 0) + row.get("w", 0) / 2.0,
+                row.get("y", 0) + row.get("h", 0) / 2.0)
+
+    def candidates(y_min, y_max, x_min=0.0, x_max=1.0):
+        found = []
+        for row in ordered:
+            x, y = center(row)
+            nx, ny = x / max(1, card_width), y / max(1, card_height)
+            if x_min <= nx <= x_max and y_min <= ny < y_max:
+                value = _compact(row.get("text", ""))
+                if value:
+                    found.append((row, value))
+        return found
+
+    if not result["name"]:
+        for _, value in candidates(0.08, 0.24, 0.14, 0.66):
+            if any(label in value for label in FIELD_LABELS):
+                continue
+            name = _clean_name(value)
+            if 2 <= len(name) <= 12:
+                result["name"] = name
+                break
+
+    if not result["sex"]:
+        for _, value in candidates(0.22, 0.40, 0.12, 0.38):
+            match = re.search(r"[男女]", value)
+            if match:
+                result["sex"] = match.group(0)
+                break
+
+    if not result["ethnicity"]:
+        for _, value in candidates(0.22, 0.40, 0.36, 0.66):
+            compact = value.replace("民族", "").strip(":")
+            if compact in ETHNICITIES:
+                result["ethnicity"] = compact
+                break
+
+    if not result["birth"]:
+        for _, value in candidates(0.34, 0.49, 0.12, 0.70):
+            birth = _extract_date(value)
+            if birth:
+                result["birth"] = birth
+                break
+
+    if not result["address"]:
+        address_parts = []
+        for _, value in candidates(0.48, 0.80, 0.13, 0.74):
+            if (not re.search(r"\d{17}[0-9Xx]", normalize_id_candidate(value))
+                    and "公民身份" not in value):
+                address_parts.append(value.replace("住址", "").lstrip(":"))
+        result["address"] = "".join(address_parts).strip("：:，,。 ")
+
+    required = ("name", "sex", "ethnicity", "birth", "address", "id_number")
+    result["field_count"] = sum(bool(result[field]) for field in required)
+    return result
+
+
+class CardStability:
+    '''对四角位置做低通，并要求连续稳定一段时间后才准许识别。'''
+
+    def __init__(self, max_motion_px=9.0, hold_s=0.35, alpha=0.35):
+        self.max_motion_px = max_motion_px
+        self.hold_s = hold_s
+        self.alpha = alpha
+        self.corners = None
+        self._stable_since = None
+
+    def reset(self):
+        self.corners = None
+        self._stable_since = None
+
+    def update(self, corners, now):
+        if corners is None or len(corners) != 4:
+            self.reset()
+            return False, None
+        points = [(float(x), float(y)) for x, y in corners]
+        if self.corners is None:
+            self.corners = points
+            self._stable_since = now
+            return False, self.corners
+
+        rms = math.sqrt(sum(
+            (new[0] - old[0]) ** 2 + (new[1] - old[1]) ** 2
+            for new, old in zip(points, self.corners)) / 4.0)
+        if rms > self.max_motion_px:
+            self._stable_since = now
+        self.corners = [
+            (old[0] * (1 - self.alpha) + new[0] * self.alpha,
+             old[1] * (1 - self.alpha) + new[1] * self.alpha)
+            for new, old in zip(points, self.corners)
+        ]
+        ready = self._stable_since is not None and now - self._stable_since >= self.hold_s
+        return ready, self.corners
+
+
+def touch_action(nx, ny, state="preview", controls_top=0.875):
+    '''把归一化触摸点映射为预览页或结果页动作。'''
+    nx = max(0.0, min(1.0, nx))
+    ny = max(0.0, min(1.0, ny))
+    if nx <= 0.09 and ny <= 0.13:
+        return "EXIT"
+    if state == "preview":
+        if ny >= controls_top:
+            if nx < 0.25:
+                return "EXIT"
+            if nx > 0.75:
+                return "LIGHT"
+            return "SCAN"
+        return "SCAN"
+    if ny >= controls_top:
+        if nx < 0.25:
+            return "REVEAL"
+        if nx > 0.75:
+            return "RAW"
+        return "RESCAN"
+    return None
