@@ -84,6 +84,26 @@ def start_scan():
     threading.Thread(target=work, daemon=True).start()
 
 
+# ----------------------------- M3 测距状态 ---------------------------
+ping_lock = threading.Lock()
+ping_hist = deque(maxlen=40)   # 每项 {'ok':bool,'ms':float|None}
+ping_stop = False
+
+
+def _ping_loop():
+    '''按 selected_mac 每秒 l2ping 一次,推入历史。'''
+    while not ping_stop:
+        mac = selected_mac
+        if mac:
+            res = btctl.l2ping_once(mac, timeout=3)
+            with ping_lock:
+                ping_hist.append(res)
+        time.sleep(1.0)
+
+
+threading.Thread(target=_ping_loop, daemon=True).start()
+
+
 # ----------------------------- 文字 ---------------------------------
 ft = cv2.freetype.createFreeType2()
 ft.loadFontData(FONT, 0)
@@ -283,7 +303,49 @@ def render_scan(img, key, actions):
 
 
 def render_range(img, key, actions):
-    pass
+    '''M3 测距:对 selected_mac 反复 l2ping,画延迟/可达柱状图。'''
+    with scan_lock:
+        devs = list(scan_devices)
+    name = next((d['name'] for d in devs if d['mac'] == selected_mac), None)
+    while actions:
+        kind = actions.pop(0)
+        if kind[0] == "tap" and kind[1] == "CENTER":
+            with ping_lock:
+                ping_hist.clear()
+            key.flash(dur=0.03)
+    if not selected_mac:
+        text(img, "先在扫描模式选中设备", (W // 2 - 140, H // 2), (0, 180, 255), 24)
+        return
+    with ping_lock:
+        hist = list(ping_hist)
+    text(img, f"目标 {name or selected_mac}", (10, 36), (255, 255, 255), 20)
+    text(img, selected_mac, (10, 64), (150, 150, 150), 16)
+    text(img, "中间清空历史", (W - 160, 36), (160, 160, 160), 16)
+
+    if not hist:
+        text(img, "测量中…", (W // 2 - 60, H // 2), (0, 200, 255), 24)
+        return
+
+    ok_n = sum(1 for h in hist if h['ok'])
+    rate = 100.0 * ok_n / len(hist)
+    last = hist[-1]
+    if last['ok']:
+        text(img, f"最近 {last['ms']:.1f} ms   可达率 {rate:.0f}%",
+             (10, 92), (0, 255, 120), 22)
+    else:
+        text(img, f"无响应/不可达   可达率 {rate:.0f}%", (10, 92), (0, 160, 255), 22)
+
+    # 柱状图:每条宽 12,高按 ms(上限 200ms 映射到 120px),失败画矮红条
+    bx, by = 20, 300
+    for i, h in enumerate(hist):
+        x = bx + i * 13
+        if h['ok']:
+            hh = int(min(120, max(4, h['ms'] / 200.0 * 120)))
+            cv2.rectangle(img, (x, by + 120 - hh), (x + 10, by + 120), (0, 200, 80), -1)
+        else:
+            cv2.rectangle(img, (x, by + 110), (x + 10, by + 120), (0, 80, 220), -1)
+    cv2.line(img, (bx, by + 120), (bx + len(hist) * 13, by + 120), (120, 120, 120), 1)
+    text(img, "绿=可达(高=延迟大)  红=无响应", (10, by + 132), (150, 150, 150), 16)
 
 
 def draw_hud(img, mode, fps):
