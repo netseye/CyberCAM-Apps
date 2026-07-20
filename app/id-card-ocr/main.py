@@ -8,6 +8,7 @@ import cv2
 import fcntl
 import gc
 import os
+import select
 import struct
 import threading
 import time
@@ -135,8 +136,11 @@ class TouchInput:
     def __init__(self, device="/dev/input/event0", flipped=False):
         self.device = device
         self.flipped = flipped
-        self.points = deque()
+        # OCR 是同步操作，期间不会消费触摸事件。只保留最近几次释放动作，
+        # 防止异常输入设备或反复点击让队列无界增长。
+        self.points = deque(maxlen=8)
         self.running = False
+        self._fd = None
         self._x = self._y = 0
         try:
             fd = os.open(device, os.O_RDONLY)
@@ -155,24 +159,36 @@ class TouchInput:
 
     def _loop(self):
         try:
-            fd = os.open(self.device, os.O_RDONLY)
+            fd = os.open(self.device, os.O_RDONLY | os.O_NONBLOCK)
+            self._fd = fd
         except OSError:
             return
-        while self.running:
+        try:
+            while self.running:
+                try:
+                    readable, _, _ = select.select([fd], [], [], 0.1)
+                    if not readable:
+                        continue
+                    data = os.read(fd, 24)
+                except (BlockingIOError, InterruptedError):
+                    continue
+                except OSError:
+                    break
+                if len(data) < 24:
+                    continue
+                _, _, kind, code, value = struct.unpack("<QQHHi", data)
+                if kind == EV_ABS and code == ABS_X:
+                    self._x = value
+                elif kind == EV_ABS and code == ABS_Y:
+                    self._y = value
+                elif kind == EV_KEY and code == BTN_TOUCH and value == 0:
+                    self.points.append((self._x, self._y))
+        finally:
             try:
-                data = os.read(fd, 24)
+                os.close(fd)
             except OSError:
-                break
-            if len(data) < 24:
-                continue
-            _, _, kind, code, value = struct.unpack("<QQHHi", data)
-            if kind == EV_ABS and code == ABS_X:
-                self._x = value
-            elif kind == EV_ABS and code == ABS_Y:
-                self._y = value
-            elif kind == EV_KEY and code == BTN_TOUCH and value == 0:
-                self.points.append((self._x, self._y))
-        os.close(fd)
+                pass
+            self._fd = None
 
     def poll(self):
         if not self.points:
@@ -187,6 +203,12 @@ class TouchInput:
 
     def close(self):
         self.running = False
+        if self._thread is not None and self._thread.is_alive():
+            # _loop 最长在 select 中等待 100 ms；等待它自行关闭 fd，避免从
+            # 另一线程关闭后 fd 编号被系统复用造成竞态。
+            self._thread.join(timeout=0.25)
+        if self._thread is not None and self._thread.is_alive():
+            print("[input] 触摸线程未在超时内退出")
 
 
 class Key:
@@ -237,6 +259,14 @@ class Key:
         if self._beep is not None:
             self._beep.value = 0
         self.set_light(False)
+        for device in (self._key, self._beep, self._led):
+            deinit = getattr(device, "deinit", None)
+            if callable(deinit):
+                try:
+                    deinit()
+                except Exception:
+                    pass
+        self._key = self._beep = self._led = None
 
 
 # ----------------------------- UI -----------------------------------
@@ -409,7 +439,7 @@ def main():
         Display.set_rotation(2)
 
     cap = touch = key = None
-    frame = last_frame = last_corners = result = rows = None
+    frame = last_frame = last_corners = result = rows = result_screen = None
     runtime = OCRRuntime()
     try:
         cap = _open_camera(flipped)
@@ -422,6 +452,8 @@ def main():
         state = "preview"
         result, rows = core.parse_id_card([]), []
         reveal = raw = False
+        result_screen = None
+        result_notice = None
         light_on = False
         last_frame = last_corners = None
         ready = False
@@ -464,11 +496,14 @@ def main():
                 key.pulse(now, 0.025)
 
             if state == "result":
+                result_dirty = False
                 if action == "REVEAL":
                     reveal = not reveal
+                    result_dirty = True
                     key.pulse(now, 0.03)
                 elif action == "RAW":
                     raw = not raw
+                    result_dirty = True
                     key.pulse(now, 0.03)
                 elif action == "RESCAN":
                     _show(compose_processing("正在释放 AI 并恢复取景…"))
@@ -476,14 +511,22 @@ def main():
                     cap = _open_camera(flipped)
                     state = "preview"
                     result, rows = core.parse_id_card([]), []
+                    result_screen = result_notice = None
                     reveal = raw = False
                     light_on = False
                     key.set_light(False)
                     gate.reset()
                     key.pulse(now)
                     continue
-                _show(compose_result(result, rows, reveal, raw,
-                                     notice if now < notice_until else None))
+                visible_notice = notice if now < notice_until else None
+                # 结果页内容通常完全静止。仅在显示模式或提示状态变化时重建
+                # 画布，避免每 10 ms 分配约 0.88 MiB 的 NumPy/OpenCV 对象。
+                if (result_screen is None or result_dirty or
+                        visible_notice != result_notice):
+                    result_screen = compose_result(
+                        result, rows, reveal, raw, visible_notice)
+                    result_notice = visible_notice
+                    _show(result_screen)
                 key.update(now)
                 time.sleep(0.01)
                 continue
@@ -523,7 +566,10 @@ def main():
                     reveal = raw = False
                     notice = "识别完成 · 原图未保存"
                     notice_until = time.monotonic() + 2.0
-                    _show(compose_result(result, rows, reveal, raw, notice))
+                    result_screen = compose_result(
+                        result, rows, reveal, raw, notice)
+                    result_notice = notice
+                    _show(result_screen)
                     continue
                 except Exception as exc:
                     print("[ocr] 识别失败:", type(exc).__name__, str(exc))
@@ -554,7 +600,7 @@ def main():
             key.close()
         cap = _release_camera(cap)
         # 不保留上次帧或证件透视图。
-        frame = last_frame = last_corners = result = rows = None
+        frame = last_frame = last_corners = result = rows = result_screen = None
         gc.collect()
 
 
