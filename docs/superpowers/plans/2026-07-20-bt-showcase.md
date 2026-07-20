@@ -803,22 +803,28 @@ def start_scan():
 
 - [ ] **Step 2: Replace the `render_scan` stub**
 
+All M2 interaction is centralized here (consistent with how `render_adapter` owns its own CENTER tap). **Do NOT modify `main()`** — the shell's CENTER handler already appends `("tap","CENTER")` for every mode; `render_scan` consumes it.
+
 ```python
 def render_scan(img, key, actions):
-    '''M2 扫描:中间触摸开始/重扫;列表分页;点选设备(selected_mac)。'''
+    '''M2 扫描:中间触摸开始/重扫;有设备时点选(循环高亮)作为测距目标。'''
     global scan_page, selected_mac
     with scan_lock:
         st = scan_state
         devs = list(scan_devices)
     while actions:
-        kind = actions.pop(0)
-        if kind[0] == "tap" and kind[1] == "CENTER":
-            if st == "scanning":
-                scan_page = 0
-            else:
-                start_scan()
-                scan_page = 0
-            key.flash(dur=0.03)
+        actions.pop(0)
+        if st == "scanning":
+            scan_page = 0
+        elif not devs:
+            start_scan()
+            scan_page = 0
+        else:
+            cur = next((i for i, d in enumerate(devs) if d['mac'] == selected_mac), -1)
+            nxt = (cur + 1) % len(devs)
+            selected_mac = devs[nxt]['mac']
+            scan_page = nxt // PER_PAGE   # 选中设备自动翻到所在页,高亮始终可见
+            key.flash(led=True, dur=0.03)
     text(img, "中间触摸开始/重新扫描", (10, 36), (200, 200, 200), 20)
     if st == "scanning":
         text(img, "扫描中…", (W // 2 - 50, H // 2), (0, 200, 255), 28)
@@ -837,30 +843,10 @@ def render_scan(img, key, actions):
         text(img, f"{idx + 1}. {name}", (20, y), col, 20)
         text(img, mac, (320, y), (150, 150, 150), 16)
         y += 28
-    text(img, "点选设备高亮 -> 测距目标(翻页用按键)", (10, H - 50), (140, 140, 140), 16)
+    text(img, "点选设备高亮 -> 测距目标", (10, H - 50), (140, 140, 140), 16)
 ```
 
-- [ ] **Step 3: Wire device selection in the main loop**
-
-In `main()`, replace the input-handling block's CENTER branch so a CENTER tap in scan mode **selects** the current page's first device (simple, no per-row hit-testing) OR if already selected cycles to next device. Add after the existing `elif region == "CENTER": actions.append(("tap", "CENTER"))`:
-
-```python
-        elif region == "CENTER":
-            if mode == 1:  # 扫描模式:点选 / 循环设备
-                with scan_lock:
-                    devs = list(scan_devices)
-                if devs:
-                    cur = next((i for i, d in enumerate(devs) if d['mac'] == selected_mac), -1)
-                    nxt = devs[(cur + 1) % len(devs)]
-                    selected_mac = nxt['mac']
-                    key.flash(led=True, dur=0.03)
-                else:
-                    actions.append(("tap", "CENTER"))  # 无设备时落到 render_scan 提示重扫
-            else:
-                actions.append(("tap", "CENTER"))
-```
-
-- [ ] **Step 4: Deploy + smoke test**
+- [ ] **Step 3: Deploy + smoke test**
 
 ```bash
 expect /tmp/scp.exp app/bt-showcase/main.py pi@10.10.11.213:/data/app/bt-showcase/main.py
@@ -868,11 +854,11 @@ expect /tmp/sshcmd.exp "cd /data/app/bt-showcase && timeout 8 python -u main.py 
 ```
 Expected: no Traceback, `DONE`.
 
-- [ ] **Step 5: Manual check**
+- [ ] **Step 4: Manual check**
 
-Switch to M2, center-tap to scan (~8s), see device list. Center-tap cycles selection (highlight turns green).
+Switch to M2, center-tap to scan (~8s), see device list. Center-tap cycles selection (highlight turns green); selecting a device on a later page auto-jumps to that page.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add app/bt-showcase/main.py
