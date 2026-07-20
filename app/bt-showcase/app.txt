@@ -1,0 +1,3 @@
+name_cn="蓝牙展示"
+name_en="BT Showcase"
+index=22
