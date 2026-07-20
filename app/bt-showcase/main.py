@@ -23,14 +23,13 @@ import numpy as np
 from walnutpi import Display, direction
 
 import core
+import btctl
 
 # ----------------------------- 配置 ---------------------------------
 W, H = 640, 480
 FONT = "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
 FONT_H = 24
 MODES = ["适配器", "扫描", "测距"]
-
-import btctl
 
 # ----------------------------- M1 适配器状态 -------------------------
 adapter_lock = threading.Lock()
@@ -93,7 +92,8 @@ ping_stop = False
 def _ping_loop():
     '''按 selected_mac 每秒 l2ping 一次,推入历史。'''
     while not ping_stop:
-        mac = selected_mac
+        with scan_lock:
+            mac = selected_mac   # selected_mac 由 render_scan 在 scan_lock 下写入
         if mac:
             try:
                 res = btctl.l2ping_once(mac, timeout=3)
