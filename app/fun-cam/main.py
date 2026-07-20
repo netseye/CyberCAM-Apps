@@ -9,7 +9,7 @@
 交互:
   - 触摸左/右:上一/下一模式;触摸中间:模式内动作(清空/换贴纸/手动拍)
   - 板载按键 KEY:下一模式
-  - M1 长按:保存画布;M3 摇一摇/中间拍照、长按重新校准陀螺仪
+  - M1 长按:保存画布;M3 摇一摇/中间拍照、长按重校陀螺仪+归零(以当前姿态为水平基准)
 '''
 
 import cv2
@@ -228,6 +228,8 @@ _disp_roll = None     # 显示端 EMA 平滑后的 roll(deg);None=未初始化(�
 _snap_in = False      # 吸附水平迟滞状态:当前是否处在「已对齐」吸附区
 _disp_pitch = None    # 显示端 EMA 平滑后的 pitch(deg)
 _drawn_pitch = None   # pitch 显示死区:上次显示的 pitch(deg)
+_roll_zero = 0.0      # 归零(tare)基准:显示 roll 减去此值;长按中间设置。0=绝对水平
+_pitch_zero = 0.0     # 归零基准:显示 pitch 减去此值
 _recal_guard = 0.0    # 重新校准后短暂忽略 tap(长按抬笔会产生一次 tap)
 try:
     from qmi8658 import open_imu
@@ -238,14 +240,19 @@ except Exception as e:
     print("[imu] 初始化失败:", e)
 
 
-def _do_calibrate(n=150):
-    '''校准陀螺仪零偏,并按当前加速度重置滤波器(避免校准后跳变)。无 UI。'''
-    global imu_roll, imu_pitch, imu_last_t, _drawn_roll, _disp_roll, _snap_in, _disp_pitch, _drawn_pitch
+def _do_calibrate(n=150, tare=False):
+    '''校准陀螺仪零偏,并按当前加速度重置滤波器(避免校准后跳变)。无 UI。
+    tare=True 时同时把当前姿态记成水平基准(后续显示角度都减去它),
+    用于在不平的面上以当前姿态为 0。'''
+    global imu_roll, imu_pitch, imu_last_t, _drawn_roll, _disp_roll, _snap_in, _disp_pitch, _drawn_pitch, _roll_zero, _pitch_zero
     imu.calibrate(n)
     ax, ay, az, *_ = imu.read()
     imu_roll = core.accel_to_roll(ax, ay, az)
     imu_pitch = core.accel_to_pitch(ax, ay, az)
     imu_last_t = None
+    if tare:
+        _roll_zero = math.degrees(imu_roll)   # 当前姿态 = 水平基准
+        _pitch_zero = math.degrees(imu_pitch)
     _drawn_roll = None
     _disp_roll = None      # 重置显示平滑,让 EMA 从新角度重新播种
     _snap_in = False
@@ -265,13 +272,13 @@ def _startup_calibrate_prompt():
 
 
 def _recalibrate_gyro(img):
-    '''M3 长按:在相机画面上提示并重新校准陀螺仪零偏。'''
+    '''M3 长按:重校陀螺仪零偏 + 把当前姿态归零为水平基准(tare)。'''
     if not (imu_ok and getattr(imu, "has_gyro", False)):
         return
     cv2.rectangle(img, (0, H // 2 - 30), (W, H // 2 + 30), (0, 0, 0), -1)
-    text(img, "重新校准中,请保持静止…", (W // 2 - 200, H // 2 - 12), (0, 200, 255), 22)
+    text(img, "重校陀螺仪 + 归零中,请保持静止…", (W // 2 - 230, H // 2 - 12), (0, 200, 255), 22)
     Display.show(img)
-    _do_calibrate(150)
+    _do_calibrate(150, tare=True)
 
 
 # ----------------------------- 模式渲染 --------------------------------
@@ -373,7 +380,7 @@ def render_ar(img, key, actions):
 
 def render_motion(img, key, actions):
     '''M3 体感快门:摇一摇或中间触摸拍照(蜂鸣+LED+白闪+保存),叠加 AR 水平线辅助构图。'''
-    global imu_roll, imu_pitch, flash_until, imu_last_t, _recal_guard, _drawn_roll, _disp_roll, _snap_in, _disp_pitch, _drawn_pitch
+    global imu_roll, imu_pitch, flash_until, imu_last_t, _recal_guard, _drawn_roll, _disp_roll, _snap_in, _disp_pitch, _drawn_pitch, _roll_zero, _pitch_zero
     shot = None
     now = time.time()
     if imu_ok:
@@ -412,7 +419,7 @@ def render_motion(img, key, actions):
     # (对标 Sony/Canon/iPhone 的电子水平仪:融合 ✅ + 显示低通 + 吸附死区 + 到位反馈):
     #  ① 显示端 EMA(~0.3s)压手抖/残噪;② 吸附水平(进区 ±1°、出区 ±2° 迟滞)
     #     锁成 0° 并蜂鸣确认;③ 量化到 0.5° 台阶、变化 <0.3° 不重绘。
-    roll_deg = math.degrees(imu_roll)
+    roll_deg = math.degrees(imu_roll) - _roll_zero    # 减归零基准:0 = 用户定义的水平
     if _disp_roll is None:
         _disp_roll = roll_deg
     else:
@@ -440,7 +447,7 @@ def render_motion(img, key, actions):
     cv2.line(img, (cx - dx, cy - dy), (cx + dx, cy + dy), col, thick)
     cv2.line(img, (cx, cy - 12), (cx, cy + 12), col, thick)
     # 俯仰同样走 EMA + 死区(量化到 1°,辅助信息无需 0.5° 精度),否则十分位每帧乱跳
-    pitch_deg = math.degrees(imu_pitch)
+    pitch_deg = math.degrees(imu_pitch) - _pitch_zero   # 减归零基准
     if _disp_pitch is None:
         _disp_pitch = pitch_deg
     else:
@@ -456,7 +463,7 @@ def render_motion(img, key, actions):
     elif not has_gyro:
         text(img, "仅加速度(无陀螺仪)· 水平线会抖", (W // 2 - 160, H // 2), (0, 160, 255), 20)
     else:
-        text(img, "摇一摇/中间拍照 · 长按重新校准", (W // 2 - 170, H - 50), (180, 180, 180), 20)
+        text(img, "摇一摇/中间拍照 · 长按重校+归零", (W // 2 - 170, H - 50), (180, 180, 180), 20)
     # 拍照白闪(仅显示,不影响已保存的原图)
     if now < flash_until:
         cv2.rectangle(img, (0, 0), (W, H), (255, 255, 255), -1)
