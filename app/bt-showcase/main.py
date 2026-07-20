@@ -59,7 +59,7 @@ scan_state = "idle"        # 'idle' | 'scanning'
 scan_page = 0
 selected_mac = None        # 全局,供 M3 使用
 
-PER_PAGE = 8
+PER_PAGE = 12
 
 
 def start_scan():
