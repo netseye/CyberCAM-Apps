@@ -11,9 +11,11 @@ assert approx(accel_to_a_mag(0, 0, -1), 1.0), accel_to_a_mag(0, 0, -1)
 # |a| for (3,4,0) = 5
 assert approx(accel_to_a_mag(3, 4, 0), 5.0)
 
-# level device (gravity along z): roll=0, pitch=0
-assert approx(accel_to_roll(0, 0, -1), 0.0)
-assert approx(accel_to_pitch(0, 0, -1), 0.0)
+# level device: 本板 QMI8658A 水平时重力沿 +Y (ay≈1) -> roll=0, pitch=0
+assert approx(accel_to_roll(0, 1, 0), 0.0)
+assert approx(accel_to_pitch(0, 1, 0), 0.0)
+# 绕 X 轴滚 90°(重力从 +Y 转到 +Z): roll = atan2(az=1, ay=0) = +90°
+assert approx(accel_to_roll(0, 0, 1), math.pi / 2)
 
 # complementary branch
 expected = 0.98 * (0.1 + 0.5 * 0.1) + 0.02 * 0.1

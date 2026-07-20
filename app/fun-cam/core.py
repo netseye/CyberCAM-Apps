@@ -10,8 +10,16 @@ def accel_to_a_mag(ax, ay, az):
 
 
 def accel_to_roll(ax, ay, az):
-    '''由加速度推 roll (rad)，约等于 atan2(ay, hypot(ax,az))。'''
-    return math.atan2(ay, math.hypot(ax, az))
+    '''由加速度推 roll (rad)。
+
+    本板 QMI8658A 的安装方向:水平(正常持机)时重力沿 +Y(ay≈1, ax≈az≈0),
+    roll 是绕 X 轴的转动,故水平归零式为 atan2(az, ay)。
+    (教材里常见的 atan2(ay, hypot(ax,az)) 假设水平时重力沿 Z,在本板上会差 90°,
+    导致水平线画成竖线。)
+    注意:QMA6100P fallback 的 Y 极性相反(ay≈-1),走 fallback 时此式会差 180°;
+    正常以 root 跑 GUI 用的是 QMI8658A,不受影响。
+    '''
+    return math.atan2(az, ay)
 
 
 def accel_to_pitch(ax, ay, az):
