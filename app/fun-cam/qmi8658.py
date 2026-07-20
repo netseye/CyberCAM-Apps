@@ -76,18 +76,35 @@ class QMI8658:
         return (ax, ay, az, gx, gy, gz)
 
     def calibrate(self, n=100, quiet=False):
-        '''静止采样 n 次,取陀螺仪三轴均值作为零偏。'''
-        sx = sy = sz = 0.0
-        m = 0
+        '''静止采样 n 次,用「中位数 + MAD 剔异常」求陀螺仪三轴零偏。
+
+        校准期间若设备被碰动,那几帧角速度很大;直接取均值会把尖峰算进零偏 →
+        后续持续漂移、水平线晃。故以中位数定位中心、用 MAD 估 σ,丢掉 |x-med|>2σ
+        的点后再取均值(对单个巨大尖峰鲁棒,普通 2σ 会被尖峰自身撑大而失效)。
+        '''
+        xs, ys, zs = [], [], []
         for _ in range(n):
             try:
                 _, _, _, gx, gy, gz = self.read()
-                sx += gx; sy += gy; sz += gz; m += 1
+                xs.append(gx); ys.append(gy); zs.append(gz)
             except OSError:
                 pass
             time.sleep(0.005)
-        if m:
-            self._gbias = (sx / m, sy / m, sz / m)
+
+        def _median(v):
+            v = sorted(v)
+            return v[len(v) // 2]
+
+        def _robust_mean(v):
+            if not v:
+                return 0.0
+            med = _median(v)
+            mad = _median([abs(x - med) for x in v])      # 中位绝对偏差
+            s = 1.4826 * mad or 1e-6                       # MAD -> σ 估计
+            kept = [x for x in v if abs(x - med) <= 2 * s]
+            return sum(kept) / len(kept) if kept else med
+
+        self._gbias = (_robust_mean(xs), _robust_mean(ys), _robust_mean(zs))
         if not quiet:
             print(f'[qmi8658] 陀螺仪零偏(dps): {self._gbias}')
 

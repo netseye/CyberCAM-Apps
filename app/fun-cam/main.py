@@ -9,7 +9,7 @@
 交互:
   - 触摸左/右:上一/下一模式;触摸中间:模式内动作(清空/换贴纸/手动拍)
   - 板载按键 KEY:下一模式
-  - M1 长按:保存画布;M3 摇一摇:拍照(蜂鸣+白闪)
+  - M1 长按:保存画布;M3 摇一摇/中间拍照、长按重新校准陀螺仪
 '''
 
 import cv2
@@ -116,6 +116,10 @@ class TouchInput:
                     self._down_t = time.monotonic()
                     self._long_fired = False
                 else:
+                    # 抬笔入队:此时 ABS_X/Y 是本次接触的稳定坐标(原实现漏了这步,
+                    # 导致 poll_region 永远取不到 tap,触摸切模式/点按全部失效)
+                    if self._down:
+                        self.taps.append((self._x, self._y))
                     self._down = False
 
     def poll_region(self):
@@ -219,14 +223,47 @@ imu_pitch = 0.0
 imu_last_t = None
 shake = core.ShakeDetector(spike_g=2.5, debounce_s=1.5)
 flash_until = 0.0
+_drawn_roll = None    # 水平线显示死区:上次实际画线的 roll(deg)
+_recal_guard = 0.0    # 重新校准后短暂忽略 tap(长按抬笔会产生一次 tap)
 try:
     from qmi8658 import open_imu
     imu = open_imu()
     imu_ok = True
-    if getattr(imu, "has_gyro", False):
-        imu.calibrate(50)
+    # 陀螺仪零偏校准放到 main() 里做(带「请保持静止」屏显提示),这里不校准
 except Exception as e:
     print("[imu] 初始化失败:", e)
+
+
+def _do_calibrate(n=150):
+    '''校准陀螺仪零偏,并按当前加速度重置滤波器(避免校准后跳变)。无 UI。'''
+    global imu_roll, imu_pitch, imu_last_t, _drawn_roll
+    imu.calibrate(n)
+    ax, ay, az, *_ = imu.read()
+    imu_roll = core.accel_to_roll(ax, ay, az)
+    imu_pitch = core.accel_to_pitch(ax, ay, az)
+    imu_last_t = None
+    _drawn_roll = None
+
+
+def _startup_calibrate_prompt():
+    '''开机:全屏提示并校准一次(用户看得见「正在校准」,且 2σ 鲁棒)。'''
+    if not (imu_ok and getattr(imu, "has_gyro", False)):
+        return
+    img = np.zeros((H, W, 3), np.uint8)
+    text(img, "陀螺仪校准中", (W // 2 - 110, H // 2 - 34), (0, 255, 120), 30)
+    text(img, "请保持设备静止 ~1 秒", (W // 2 - 170, H // 2 + 8), (200, 200, 200), 22)
+    Display.show(img)
+    _do_calibrate(180)
+
+
+def _recalibrate_gyro(img):
+    '''M3 长按:在相机画面上提示并重新校准陀螺仪零偏。'''
+    if not (imu_ok and getattr(imu, "has_gyro", False)):
+        return
+    cv2.rectangle(img, (0, H // 2 - 30), (W, H // 2 + 30), (0, 0, 0), -1)
+    text(img, "重新校准中,请保持静止…", (W // 2 - 200, H // 2 - 12), (0, 200, 255), 22)
+    Display.show(img)
+    _do_calibrate(150)
 
 
 # ----------------------------- 模式渲染 --------------------------------
@@ -328,7 +365,7 @@ def render_ar(img, key, actions):
 
 def render_motion(img, key, actions):
     '''M3 体感快门:摇一摇或中间触摸拍照(蜂鸣+LED+白闪+保存),叠加 AR 水平线辅助构图。'''
-    global imu_roll, imu_pitch, flash_until, imu_last_t
+    global imu_roll, imu_pitch, flash_until, imu_last_t, _recal_guard, _drawn_roll
     shot = None
     now = time.time()
     if imu_ok:
@@ -349,29 +386,42 @@ def render_motion(img, key, actions):
             imu_roll, imu_pitch = roll_a, pitch_a
         if shake.update(a_mag, now):
             shot = img
-    # 中间触摸/长按 = 手动快门
+    # 中间触摸 = 手动快门;长按 = 重新校准陀螺仪(校准后 0.6s 内忽略抬笔 tap)
     while actions:
         kind = actions.pop(0)
-        if kind[0] in ("tap", "longpress"):
+        if kind[0] == "longpress":
+            _recalibrate_gyro(img)
+            _recal_guard = now + 0.6
+        elif kind[0] == "tap" and now < _recal_guard:
+            pass
+        elif kind[0] == "tap":
             shot = img
     if shot is not None:
         if save_shot(shot, "snap"):
             key.flash(led=True, dur=0.06)
         flash_until = now + 0.15
     # AR 水平构图线(过中心,随 roll 旋转,水平时变绿)
+    # 显示死区:量化到 0.5° 台阶,变化 <0.3° 则保持上次画的角度 → 消除残抖
     roll_deg = math.degrees(imu_roll)
-    col = core.level_color(roll_deg)
+    q = round(roll_deg / 0.5) * 0.5
+    if _drawn_roll is None or abs(q - _drawn_roll) >= 0.3:
+        _drawn_roll = q
+    col = core.level_color(_drawn_roll)
     cx, cy = W // 2, H // 2
     ll = 160
-    dx = int(ll * math.cos(imu_roll))
-    dy = int(ll * math.sin(imu_roll))
+    droll = math.radians(_drawn_roll)
+    dx = int(ll * math.cos(droll))
+    dy = int(ll * math.sin(droll))
     cv2.line(img, (cx - dx, cy - dy), (cx + dx, cy + dy), col, 2)
     cv2.line(img, (cx, cy - 12), (cx, cy + 12), col, 2)
-    text(img, f"水平 {roll_deg:+5.1f}°  俯仰 {math.degrees(imu_pitch):+5.1f}°", (10, 36), col, 20)
+    text(img, f"水平 {_drawn_roll:+5.1f}°  俯仰 {math.degrees(imu_pitch):+5.1f}°", (10, 36), col, 20)
+    has_gyro = imu_ok and getattr(imu, "has_gyro", False)
     if not imu_ok:
         text(img, "IMU 不可用 · 中间手动拍", (W // 2 - 140, H // 2), (0, 160, 255), 22)
+    elif not has_gyro:
+        text(img, "仅加速度(无陀螺仪)· 水平线会抖", (W // 2 - 160, H // 2), (0, 160, 255), 20)
     else:
-        text(img, "摇一摇拍照 · 中间手动拍", (W // 2 - 150, H - 50), (180, 180, 180), 20)
+        text(img, "摇一摇/中间拍照 · 长按重新校准", (W // 2 - 170, H - 50), (180, 180, 180), 20)
     # 拍照白闪(仅显示,不影响已保存的原图)
     if now < flash_until:
         cv2.rectangle(img, (0, 0), (W, H), (255, 255, 255), -1)
@@ -389,6 +439,8 @@ def main():
     flipped = (direction.get_lcd() == 2)
     if flipped:
         Display.set_rotation(2)
+
+    _startup_calibrate_prompt()   # 屏显「请保持静止」并校准陀螺仪零偏
 
     cap = Sensor.Sensor(W, H)
     if not cap.isOpened():
