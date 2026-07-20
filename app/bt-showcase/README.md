@@ -2,6 +2,14 @@
 
 CyberCAM 上的蓝牙能力展示 app,三模式:**适配器信息 / 扫描周边 / 测距(l2ping)**。仓库里第一个蓝牙 app,且不开摄像头。
 
+## 效果
+
+![demo](./demo-modes.gif)
+
+| 适配器 | 扫描 | 测距 |
+| --- | --- | --- |
+| ![适配器](./mode-adapter.png) | ![扫描](./mode-scan.png) | ![测距](./mode-range.png) |
+
 ## 三种模式
 
 | 模式 | 内容 |
