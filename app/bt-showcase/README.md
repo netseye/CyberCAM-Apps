@@ -40,8 +40,6 @@ CyberCAM 上的蓝牙能力展示 app,三模式:**适配器信息 / 扫描周边
 - `core.py` — 纯解析逻辑(parse_show/parse_devices/parse_l2ping/paginate),PC 可单测。
 - `btctl.py` — subprocess 封装(adapter_info/scan_devices/set_discoverable/l2ping_once)。
 - `main.py` — Display/Touch/Key/模式路由 + 3 渲染 + 后台线程。
-- `tests/` — core 的纯函数单测(运行 `python3 tests/test_*.py`)。
-- `gen_icon.py` — 生成 `icon.png`(256×256,设备上用 cv2 画)的脚本。
 
 ## 部署
 
