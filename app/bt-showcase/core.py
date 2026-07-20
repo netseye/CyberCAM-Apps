@@ -47,3 +47,12 @@ def paginate(items, page, per_page):
     page = max(0, min(page, total - 1))
     start = page * per_page
     return items[start:start + per_page], total
+
+
+def parse_l2ping(text):
+    '''解析 `sudo l2ping -c 1 -s 10 <mac>` 输出。
+    成功(含 "time X ms")-> {'ok':True,'ms':float}; 否则(空/无响应)-> {'ok':False,'ms':None}。'''
+    m = re.search(r'time\s+([\d.]+)\s*ms', text or '')
+    if m:
+        return {'ok': True, 'ms': float(m.group(1))}
+    return {'ok': False, 'ms': None}
