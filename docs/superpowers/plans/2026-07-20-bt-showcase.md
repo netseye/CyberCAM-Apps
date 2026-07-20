@@ -477,19 +477,15 @@ def _eviocgabs(fd, axis):
 
 
 class TouchInput:
-    '''后台线程读 /dev/input/event0。落笔按区域入队;另支持长按检测。'''
+    '''后台线程读 /dev/input/event0。抬笔时按落笔坐标入队(此时坐标已稳定)。'''
 
-    def __init__(self, device="/dev/input/event0", flipped=False, long_thr=1.2):
+    def __init__(self, device="/dev/input/event0", flipped=False):
         self.device = device
         self.flipped = flipped
-        self.long_thr = long_thr
         self.taps = deque()
         self.running = False
         self._x = self._y = 0
         self._minx = self._maxx = None
-        self._down = False
-        self._down_t = 0.0
-        self._long_fired = False
         try:
             fd = os.open(device, os.O_RDONLY)
             self._minx, self._maxx = _eviocgabs(fd, ABS_X)
@@ -520,13 +516,8 @@ class TouchInput:
             elif typ == EV_ABS and code == ABS_Y:
                 self._y = val
             elif typ == EV_KEY and code == BTN_TOUCH:
-                if val == 1:
-                    self._down = True
-                    self._down_t = time.monotonic()
-                    self._long_fired = False
+                if val == 0:  # 抬笔入队:此时 ABS_X/Y 是本次接触的稳定坐标
                     self.taps.append((self._x, self._y))
-                else:
-                    self._down = False
 
     def poll_region(self):
         '''取一次落笔,返回 "LEFT"/"CENTER"/"RIGHT" 或 None。'''
