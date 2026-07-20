@@ -226,6 +226,8 @@ flash_until = 0.0
 _drawn_roll = None    # 水平线显示死区:上次实际画线的 roll(deg)
 _disp_roll = None     # 显示端 EMA 平滑后的 roll(deg);None=未初始化(首帧用原值播种)
 _snap_in = False      # 吸附水平迟滞状态:当前是否处在「已对齐」吸附区
+_disp_pitch = None    # 显示端 EMA 平滑后的 pitch(deg)
+_drawn_pitch = None   # pitch 显示死区:上次显示的 pitch(deg)
 _recal_guard = 0.0    # 重新校准后短暂忽略 tap(长按抬笔会产生一次 tap)
 try:
     from qmi8658 import open_imu
@@ -238,7 +240,7 @@ except Exception as e:
 
 def _do_calibrate(n=150):
     '''校准陀螺仪零偏,并按当前加速度重置滤波器(避免校准后跳变)。无 UI。'''
-    global imu_roll, imu_pitch, imu_last_t, _drawn_roll, _disp_roll, _snap_in
+    global imu_roll, imu_pitch, imu_last_t, _drawn_roll, _disp_roll, _snap_in, _disp_pitch, _drawn_pitch
     imu.calibrate(n)
     ax, ay, az, *_ = imu.read()
     imu_roll = core.accel_to_roll(ax, ay, az)
@@ -247,6 +249,8 @@ def _do_calibrate(n=150):
     _drawn_roll = None
     _disp_roll = None      # 重置显示平滑,让 EMA 从新角度重新播种
     _snap_in = False
+    _disp_pitch = None
+    _drawn_pitch = None
 
 
 def _startup_calibrate_prompt():
@@ -369,7 +373,7 @@ def render_ar(img, key, actions):
 
 def render_motion(img, key, actions):
     '''M3 体感快门:摇一摇或中间触摸拍照(蜂鸣+LED+白闪+保存),叠加 AR 水平线辅助构图。'''
-    global imu_roll, imu_pitch, flash_until, imu_last_t, _recal_guard, _drawn_roll, _disp_roll, _snap_in
+    global imu_roll, imu_pitch, flash_until, imu_last_t, _recal_guard, _drawn_roll, _disp_roll, _snap_in, _disp_pitch, _drawn_pitch
     shot = None
     now = time.time()
     if imu_ok:
@@ -421,9 +425,11 @@ def render_motion(img, key, actions):
         _snap_in = True
         key.flash(dur=0.04)                                        #    短鸣=已对齐(iPhone 触觉的等价)
     shown = 0.0 if _snap_in else _disp_roll
-    q = round(shown / 0.5) * 0.5                                   # ③ 量化
-    if _drawn_roll is None or abs(q - _drawn_roll) >= 0.3:
-        _drawn_roll = q
+    # 滞回死区(Schmitt 触发):只有当平滑值偏离「上次提交值」≥1° 才重新量化提交。
+    # 单纯 round 量化在均值卡在 1° 边界(如 −1.5°)时,±0.1° 抖动会让它在相邻量子间
+    # 来回跳(实测 23~69 次/60s);滞回与边界位置无关,静置时恒为 0 次重绘。
+    if _drawn_roll is None or abs(shown - _drawn_roll) >= 1.0:
+        _drawn_roll = round(shown / 1.0) * 1.0
     col = (0, 255, 120) if _snap_in else core.level_color(_drawn_roll)
     cx, cy = W // 2, H // 2
     ll = 160
@@ -433,8 +439,17 @@ def render_motion(img, key, actions):
     thick = 3 if _snap_in else 2                                   # 锁定时加粗,强化「已对齐」观感
     cv2.line(img, (cx - dx, cy - dy), (cx + dx, cy + dy), col, thick)
     cv2.line(img, (cx, cy - 12), (cx, cy + 12), col, thick)
+    # 俯仰同样走 EMA + 死区(量化到 1°,辅助信息无需 0.5° 精度),否则十分位每帧乱跳
+    pitch_deg = math.degrees(imu_pitch)
+    if _disp_pitch is None:
+        _disp_pitch = pitch_deg
+    else:
+        _disp_pitch = 0.88 * _disp_pitch + 0.12 * pitch_deg
+    # 同 roll:滞回死区,偏离提交值 ≥1° 才重新量化(防边界抖)
+    if _drawn_pitch is None or abs(_disp_pitch - _drawn_pitch) >= 1.0:
+        _drawn_pitch = round(_disp_pitch / 1.0) * 1.0
     tag = "(已对齐) " if _snap_in else ""
-    text(img, f"水平 {tag}{_drawn_roll:+5.1f}°  俯仰 {math.degrees(imu_pitch):+5.1f}°", (10, 36), col, 20)
+    text(img, f"水平 {tag}{_drawn_roll:+5.1f}°  俯仰 {_drawn_pitch:+5.1f}°", (10, 36), col, 20)
     has_gyro = imu_ok and getattr(imu, "has_gyro", False)
     if not imu_ok:
         text(img, "IMU 不可用 · 中间手动拍", (W // 2 - 140, H // 2), (0, 160, 255), 22)
