@@ -12,6 +12,7 @@ qmi8658.py — CyberCAM 上 QMI8658A(6轴:加速度+陀螺仪)的纯 Python I2C 
 '''
 
 import fcntl
+import math
 import os
 import struct
 import time
@@ -45,6 +46,7 @@ class QMI8658:
         self._write_reg(CTRL3, 0x43)
         self._write_reg(CTRL7, 0x03)
         self._gbias = (0.0, 0.0, 0.0)  # 陀螺仪零偏(dps)
+        self._last_good = (0.0, 0.0, 1.0, 0.0, 0.0, 0.0)  # 上一帧有效值(坏帧时复用)
         time.sleep(0.05)               # 等第一帧有效
 
     # ---- 底层 I2C ----
@@ -65,15 +67,33 @@ class QMI8658:
     chip_name = 'QMI8658A'
 
     def read(self):
-        raw = self._read_reg(ACC_START, 12)
-        if len(raw) < 12:
-            return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-        ax, ay, az = [v / ACC_LSB for v in struct.unpack('<hhh', raw[0:6])]
-        gx, gy, gz = [v / GYR_LSB for v in struct.unpack('<hhh', raw[6:12])]
-        gx -= self._gbias[0]
-        gy -= self._gbias[1]
-        gz -= self._gbias[2]
-        return (ax, ay, az, gx, gy, gz)
+        '''读一帧。I2C 偶发会读到撕裂/乱字节(WHO_AM_I 都会抖成 0xb7),
+        表现为合成加速度或陀螺离谱。坏帧会让互补滤波的陀螺积分一步窜几十度
+        → 水平线剧烈抖。故每帧做合理性校验:坏则立即重读一次,仍坏则复用上一
+        好帧(坏帧率通常 <1%,复用一帧 30ms 不可见)。
+
+        阈值留足余量,不误杀真实运动:|a| 允许 0.3~5g(摇一摇拍照峰值 ~2.5g
+        也过得去)、单轴陀螺 <400dps(手腕转动一般 <200dps)。
+        '''
+        for _ in range(2):
+            raw = self._read_reg(ACC_START, 12)
+            if len(raw) < 12:
+                continue
+            ax, ay, az = [v / ACC_LSB for v in struct.unpack('<hhh', raw[0:6])]
+            gx, gy, gz = [v / GYR_LSB for v in struct.unpack('<hhh', raw[6:12])]
+            gx -= self._gbias[0]
+            gy -= self._gbias[1]
+            gz -= self._gbias[2]
+            if self._valid(ax, ay, az, gx, gy, gz):
+                self._last_good = (ax, ay, az, gx, gy, gz)
+                return self._last_good
+        return self._last_good
+
+    @staticmethod
+    def _valid(ax, ay, az, gx, gy, gz):
+        am = math.sqrt(ax * ax + ay * ay + az * az)
+        gm = max(abs(gx), abs(gy), abs(gz))
+        return 0.3 < am < 5.0 and gm < 400.0
 
     def calibrate(self, n=100, quiet=False):
         '''静止采样 n 次,用「中位数 + MAD 剔异常」求陀螺仪三轴零偏。
