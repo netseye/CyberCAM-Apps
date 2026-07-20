@@ -9,6 +9,14 @@ CyberCAM 上第一个基于 IMU 的 APP。读取板载 **QMI8658A(6 轴:三轴�
 > 本 APP 用纯 Python(标准库)直接经 I2C(bus1/0x6a)驱动 QMI8658A,把 6 轴全用上。
 > 当 I2C 不可用时(如权限受限),自动退回 QMA6100P 仅加速度模式。
 
+## 效果
+
+![demo](./demo-cube.gif)
+
+| 3D 立方体 | 水平仪 | 波形 |
+| --- | --- | --- |
+| ![立方体](./mode-cube.png) | ![水平仪](./mode-level.png) | ![波形](./mode-scope.png) |
+
 ## 三种模式
 
 | 模式 | 内容 |
