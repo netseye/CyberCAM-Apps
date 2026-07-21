@@ -145,7 +145,7 @@ sherpa-onnx-cli text2token \
 - 部署时报 `wake/keywords.txt: FAILED`：关键词文件已经变化，但 `manifest.sha256` 尚未更新。
 - 启动时报“内置唤醒资源缺失”：复制的 App 目录不完整，重新运行 `deploy.sh`。
 - 一直停留在准备唤醒：检查是否存在不属于 `wake/model/tokens.txt` 的 token，建议重新运行 `text2token`。
-- 识别正常但界面仍显示“小智小智”：设备 `config.json` 的 `wake_word` 尚未更新，或修改后没有重启 App。
+- 识别正常但界面仍显示旧唤醒词：设备 `config.json` 的 `wake_word` 尚未更新，或修改后没有重启 App。
 - 修改后没有生效：关键词在模型初始化时读取，必须完全退出并重新启动小智。
 
 真机日志出现下面的内容代表新关键词已被识别：

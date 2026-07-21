@@ -6,7 +6,7 @@ App 已内置以下资源，部署时随 `/data/app/xiaozhi/wake` 一起复制�
 
 - `runtime-spacemit/`：sherpa-onnx v1.13.2 `linux-riscv64-spacemit-shared`
 - `model/`：`sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01`
-- `keywords.txt`：本 App 的“小智小智”拼音 token、增益和触发阈值
+- `keywords.txt`：本 App 的“你好小智”和兼容词“小智小智”的拼音 token、增益和触发阈值
 - `native/wakeword-daemon`：常驻模型进程；对话时只暂停采集并释放麦克风，模型不卸载
 - `parent_guard.py`：监控 App 父进程；即使 App 异常退出也会终止唤醒进程并释放麦克风
 - `manifest.sha256`：内置二进制、运行库和模型的完整性清单

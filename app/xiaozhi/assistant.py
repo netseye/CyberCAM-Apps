@@ -42,7 +42,7 @@ DEFAULT_CONFIG = {
     "speech_level_threshold": 0.08,
     "response_timeout_seconds": 15,
     "wake_word_enabled": True,
-    "wake_word": "小智小智",
+    "wake_word": "你好小智",
     "wake_word_device": "plughw:0,0",
     "wake_word_score": 3.5,
     "wake_word_threshold": 0.1,
@@ -260,7 +260,7 @@ class AssistantRuntime:
             return False
         if command == "wake_ready":
             if self.snapshot().phase == "arming":
-                phrase = str(self.config.get("wake_word") or "小智小智")
+                phrase = str(self.config.get("wake_word") or "你好小智")
                 self._set_state(
                     phase="idle",
                     title="叫我“%s”" % phrase,

@@ -3,7 +3,12 @@ import threading
 import unittest
 from unittest import mock
 
-from assistant import AssistantRuntime, SpeechActivityGate, TTSStopGate
+from assistant import DEFAULT_CONFIG, AssistantRuntime, SpeechActivityGate, TTSStopGate
+
+
+class DefaultConfigTests(unittest.TestCase):
+    def test_default_wake_word_matches_idle_prompt(self):
+        self.assertEqual(DEFAULT_CONFIG["wake_word"], "你好小智")
 
 
 class SpeechActivityGateTests(unittest.TestCase):
