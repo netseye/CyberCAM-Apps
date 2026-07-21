@@ -24,7 +24,7 @@
 将 `app/xiaozhi/wake/keywords.txt` 改为一行：
 
 ```text
-n ǐ h ǎo x iǎo zh ì :2.0 #0.18 @你好小智
+n ǐ h ǎo x iǎo zh ì :3.5 #0.10 @你好小智
 ```
 
 这一行的结构是：
@@ -34,11 +34,11 @@ n ǐ h ǎo x iǎo zh ì :2.0 #0.18 @你好小智
 ```
 
 - `n ǐ h ǎo x iǎo zh ì`：模型使用的 partial-pinyin token，token 之间必须有空格。
-- `:2.0`：boosting score。数值越大越容易触发，也越容易误唤醒。
-- `#0.18`：trigger threshold，范围为 0 到 1。数值越小越容易触发。
+- `:3.5`：boosting score。数值越大越容易触发，也越容易误唤醒。
+- `#0.10`：trigger threshold，范围为 0 到 1。数值越小越容易触发。
 - `@你好小智`：识别成功后返回给 App 和服务端的文字。ppinyin 模型必须提供这一项，内容不能包含空格；需要分隔时使用下划线。
 
-当一行包含 `:2.0` 和 `#0.18` 时，它们覆盖 `config.json` 中的全局 `wake_word_score` 和 `wake_word_threshold`。省略行内参数时才使用全局值。
+当一行包含 `:3.5` 和 `#0.10` 时，它们覆盖 `config.json` 中的全局 `wake_word_score` 和 `wake_word_threshold`。省略行内参数时才使用全局值。
 
 ### 2. 更新待机提示
 
@@ -103,8 +103,8 @@ python3 -m unittest discover -s tests -p 'test_wakeword.py'
 先创建原始关键词文件，例如 `/tmp/keywords_raw.txt`：
 
 ```text
-你好小智 :2.0 #0.18 @你好小智
-小智同学 :2.0 #0.18 @小智同学
+你好小智 :3.5 #0.10 @你好小智
+小智同学 :3.5 #0.10 @小智同学
 ```
 
 如果开发环境尚未安装转换工具，可安装与内置运行库一致的版本：
@@ -127,7 +127,7 @@ sherpa-onnx-cli text2token \
 
 ## 调整灵敏度
 
-建议先使用当前默认值 `:2.0 #0.18`，每次只改一个参数并在实际环境中重复测试。
+当前默认值为 `:3.5 #0.10`，在 sherpa-onnx 针对该 Wenetspeech KWS 模型的 C API 示例基础上进一步提高了关键词增益。若仍需调整，建议每次只改一个参数并在实际环境中重复测试。
 
 | 现象 | 调整方法 |
 | --- | --- |

@@ -67,6 +67,16 @@ class WakeWordTests(unittest.TestCase):
             self.assertTrue(guarded[1].endswith("wake/parent_guard.py"))
             self.assertEqual(guarded[3:], daemon)
 
+    def test_command_uses_sensitive_defaults(self):
+        with tempfile.TemporaryDirectory() as app_dir:
+            engine = WakeWordEngine(
+                app_dir, {}, lambda: None, lambda _: None, lambda _: None
+            )
+            command = engine.command()
+            self.assertIn("--keywords-threshold=0.1", command)
+            self.assertIn("--keywords-score=3.5", command)
+            self.assertEqual(engine.daemon_command()[-2:], ["3.5", "0.1"])
+
     def test_explicit_zero_score_and_threshold_are_preserved(self):
         with tempfile.TemporaryDirectory() as app_dir:
             engine = WakeWordEngine(

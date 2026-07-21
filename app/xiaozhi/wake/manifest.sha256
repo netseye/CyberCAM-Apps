@@ -8,4 +8,4 @@ c7bab0898d458151ffd255f69c0df6029ff17d569133a4106239159d9e077d67  wake/runtime-s
 dd784973fc9d2fabb3b800d6dcd20fc3b0ca84f8e2415afe54b032878e447f4d  wake/model/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx
 ed83454004d5bd16d831eaf00adcd181ed7734886aab6ef440f3ffa5aa3cfe3b  wake/model/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx
 f79760052b87239e325f0567c752ad3130b30d92effb847d4307743c20c59a24  wake/model/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx
-12ea4900238f2df7409e321cd95b049c1db3969384a0c495ad0eea1333b5c9b2  wake/keywords.txt
+1b12d69c960c92168d11626374d3d891ef1b7c9eff0e2c9b860da80cb9c34a63  wake/keywords.txt

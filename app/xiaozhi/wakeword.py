@@ -102,8 +102,8 @@ class WakeWordEngine:
     def command(self):
         binary, tokens, encoder, decoder, joiner, keywords = self._required_paths()
         device = str(self.config.get("wake_word_device") or "plughw:0,0")
-        score = _config_float(self.config, "wake_word_score", 2.0)
-        threshold = _config_float(self.config, "wake_word_threshold", 0.18)
+        score = _config_float(self.config, "wake_word_score", 3.5)
+        threshold = _config_float(self.config, "wake_word_threshold", 0.1)
         return [
             binary,
             "--print-args=false",
@@ -126,8 +126,8 @@ class WakeWordEngine:
             self.app_dir, "wake", "native", "wakeword-daemon"
         )
         device = str(self.config.get("wake_word_device") or "plughw:0,0")
-        score = _config_float(self.config, "wake_word_score", 2.0)
-        threshold = _config_float(self.config, "wake_word_threshold", 0.18)
+        score = _config_float(self.config, "wake_word_score", 3.5)
+        threshold = _config_float(self.config, "wake_word_threshold", 0.1)
         return [
             binary,
             tokens,
