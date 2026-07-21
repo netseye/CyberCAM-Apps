@@ -1,5 +1,6 @@
 """Local sherpa-onnx keyword spotter process for CyberCAM K230."""
 
+import math
 import os
 import re
 import signal
@@ -17,7 +18,16 @@ def _config_float(config, name, default):
     value = config.get(name)
     if value is None or value == "":
         value = default
-    return float(value)
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return float(default)
+    return value if math.isfinite(value) else float(default)
+
+
+def _input_gain(config):
+    gain = _config_float(config, "wake_word_input_gain", 1.8)
+    return gain if 0.5 <= gain <= 4.0 else 1.8
 
 
 def is_detection_line(line, ready=False):
@@ -48,6 +58,7 @@ class WakeWordEngine:
         self._thread = None
         self._model_ready = False
         self._want_listening = False
+        self._listening = False
         self._process_starting = False
 
     @property
@@ -128,6 +139,7 @@ class WakeWordEngine:
         device = str(self.config.get("wake_word_device") or "plughw:0,0")
         score = _config_float(self.config, "wake_word_score", 3.5)
         threshold = _config_float(self.config, "wake_word_threshold", 0.1)
+        input_gain = _input_gain(self.config)
         return [
             binary,
             tokens,
@@ -138,6 +150,7 @@ class WakeWordEngine:
             device,
             str(score),
             str(threshold),
+            str(input_gain),
         ]
 
     def guarded_command(self, command):
@@ -164,6 +177,7 @@ class WakeWordEngine:
             self._want_listening = True
             process = self._process
             ready = self._model_ready
+            listening = self._listening
             if process is None or process.poll() is not None:
                 if self._process_starting:
                     return True
@@ -178,13 +192,27 @@ class WakeWordEngine:
                 self._thread.start()
                 return True
         if ready:
-            self._resume_process(process)
+            if listening:
+                # A previous LISTENING notification may have arrived before
+                # the UI re-entered arming. Confirm the already-active capture
+                # instead of sending another start signal that can leak into
+                # the following wake cycle.
+                self.on_ready()
+            else:
+                self._resume_process(process)
         return True
 
     def _resume_process(self, process):
-        if process is None or process.poll() is not None:
-            return
-        self._paused.clear()
+        with self._lock:
+            if (
+                process is None
+                or process is not self._process
+                or process.poll() is not None
+                or not self._want_listening
+                or self._listening
+            ):
+                return
+            self._paused.clear()
         try:
             os.kill(process.pid, signal.SIGUSR2)
         except ProcessLookupError:
@@ -215,22 +243,27 @@ class WakeWordEngine:
                 if line == "MODEL_READY":
                     with self._lock:
                         self._model_ready = True
+                        self._listening = False
                         wanted = self._want_listening
                     self._paused.set()
                     if wanted:
                         self._resume_process(process)
                 elif line == "LISTENING":
                     with self._lock:
+                        self._listening = True
                         wanted = self._want_listening
                     if wanted:
                         self.on_ready()
                 elif line == "PAUSED":
+                    with self._lock:
+                        self._listening = False
                     self._paused.set()
                 elif line.startswith("DETECTED\t"):
                     keyword = line.split("\t", 1)[1].strip()
                     with self._lock:
                         wanted = self._want_listening
                         self._want_listening = False
+                        self._listening = False
                     self._paused.set()
                     if wanted:
                         self.on_detect(keyword)
@@ -239,6 +272,7 @@ class WakeWordEngine:
                     with self._lock:
                         wanted = self._want_listening
                         self._want_listening = False
+                        self._listening = False
                     self._paused.set()
                     if wanted:
                         self.on_error(message)
@@ -254,6 +288,7 @@ class WakeWordEngine:
             with self._lock:
                 self._process = None
                 self._model_ready = False
+                self._listening = False
                 self._process_starting = False
             self._paused.set()
 

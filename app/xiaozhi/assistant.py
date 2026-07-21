@@ -46,6 +46,7 @@ DEFAULT_CONFIG = {
     "wake_word_device": "plughw:0,0",
     "wake_word_score": 3.5,
     "wake_word_threshold": 0.1,
+    "wake_word_input_gain": 1.8,
 }
 
 

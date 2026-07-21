@@ -1,4 +1,4 @@
-3f6db9fed13c3c68e5b1fb95e976567dfb411f5ea3ef48575a42fa4684489b7e  wake/native/wakeword-daemon
+5477fd1fb75927a07412bca4ead7ab17e1c26042a4f1ce883826df16b4626b83  wake/native/wakeword-daemon
 139e1d5d8083b226bd9eacceb8092a421350729ccbfebaea95ddeca418830dd6  wake/runtime-spacemit/bin/sherpa-onnx-keyword-spotter-alsa
 7cf109bb4d6fce4435a4fc8567a29cbeb89544bed87f39be810638d5d81d60d9  wake/runtime-spacemit/lib/libsherpa-onnx-c-api.so
 e4abc60c53b1bcf0e3cde31b284d67c242ba3db8a2dbac3b10f0d817828fc289  wake/runtime-spacemit/lib/libonnxruntime.so.1
@@ -8,4 +8,4 @@ c7bab0898d458151ffd255f69c0df6029ff17d569133a4106239159d9e077d67  wake/runtime-s
 dd784973fc9d2fabb3b800d6dcd20fc3b0ca84f8e2415afe54b032878e447f4d  wake/model/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx
 ed83454004d5bd16d831eaf00adcd181ed7734886aab6ef440f3ffa5aa3cfe3b  wake/model/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx
 f79760052b87239e325f0567c752ad3130b30d92effb847d4307743c20c59a24  wake/model/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx
-1b12d69c960c92168d11626374d3d891ef1b7c9eff0e2c9b860da80cb9c34a63  wake/keywords.txt
+44d9e911e122c23f493715782d3c60b46ae6143e851d1805d36c0c87197959d2  wake/keywords.txt

@@ -129,11 +129,14 @@ sherpa-onnx-cli text2token \
 
 当前默认值为 `:3.5 #0.10`，在 sherpa-onnx 针对该 Wenetspeech KWS 模型的 C API 示例基础上进一步提高了关键词增益。若仍需调整，建议每次只改一个参数并在实际环境中重复测试。
 
+设备配置中的 `wake_word_input_gain` 是只作用于离线唤醒识别的数字麦克风增益，默认值为 `1.8`（约 `+5.1 dB`），有效范围为 `0.5` 到 `4.0`。它在麦克风 DC 偏置过滤后、送入模型前生效，并带有限幅保护；配置无效或超出范围时自动回退到 `1.8`。如果日志中的 `clipped` 长期明显高于 `1%`，应降低该值；远场声音的 `rms` 很低且几乎没有削波时，可以小幅提高。
+
 | 现象 | 调整方法 |
 | --- | --- |
 | 经常叫不醒 | 小幅提高 boosting score，或小幅降低 trigger threshold |
 | 经常误唤醒 | 小幅降低 boosting score，或小幅提高 trigger threshold |
 | 只有某一个词表现不好 | 修改该行的 `:`、`#` 参数，不影响其他关键词 |
+| 近距离正常、远距离叫不醒 | 小幅提高 `wake_word_input_gain`，并观察 RMS 与削波率 |
 
 提高 score 和降低 threshold 都会让触发更容易，但也会增加误唤醒。官方定义中 threshold 必须位于 0 到 1 之间。
 

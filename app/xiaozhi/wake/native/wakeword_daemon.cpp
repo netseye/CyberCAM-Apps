@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
 #include <cstring>
 #include <deque>
@@ -199,9 +200,9 @@ void CaptureLoop(snd_pcm_t *pcm, AudioRing *ring,
 }  // namespace
 
 int main(int argc, char **argv) {
-  if (argc != 9) {
+  if (argc != 10) {
     std::cerr << "usage: wakeword-daemon tokens encoder decoder joiner keywords "
-                 "device score threshold\n";
+                 "device score threshold input-gain\n";
     return 2;
   }
   signal(SIGUSR1, HandleSignal);
@@ -226,6 +227,11 @@ int main(int argc, char **argv) {
   config.keywords_score = std::stof(argv[7]);
   config.keywords_threshold = std::stof(argv[8]);
   config.keywords_file = argv[5];
+  const float input_gain = std::stof(argv[9]);
+  if (!std::isfinite(input_gain) || input_gain < 0.5f || input_gain > 4.0f) {
+    std::cerr << "input-gain must be between 0.5 and 4.0\n";
+    return 2;
+  }
 
   const SherpaOnnxKeywordSpotter *spotter =
       SherpaOnnxCreateKeywordSpotter(&config);
@@ -245,6 +251,11 @@ int main(int argc, char **argv) {
   std::vector<float> samples;
   float previous_input = 0.0f;
   float previous_output = 0.0f;
+  double level_square_sum = 0.0;
+  uint64_t level_sample_count = 0;
+  uint64_t clipped_sample_count = 0;
+  float peak_level = 0.0f;
+  auto last_level_log = std::chrono::steady_clock::now();
 
   auto stop_capture = [&]() {
     capture_running.store(false, std::memory_order_relaxed);
@@ -260,9 +271,21 @@ int main(int argc, char **argv) {
       stream = nullptr;
     }
     previous_input = previous_output = 0.0f;
+    level_square_sum = 0.0;
+    level_sample_count = 0;
+    clipped_sample_count = 0;
+    peak_level = 0.0f;
+    last_level_log = std::chrono::steady_clock::now();
   };
 
   while (!g_exit_requested) {
+    // SIGUSR2 is level-triggered state, not a queued command. Discard a
+    // redundant start received while capture is already active; otherwise it
+    // survives until stop_capture() and immediately reopens ALSA in the next
+    // cycle before the Python parent has requested listening again.
+    if (pcm && g_start_requested) {
+      g_start_requested = 0;
+    }
     if (g_stop_requested) {
       stop_capture();
       g_stop_requested = 0;
@@ -306,7 +329,28 @@ int main(int argc, char **argv) {
       float output = input - previous_input + 0.98f * previous_output;
       previous_input = input;
       previous_output = output;
-      samples[i] = std::max(-1.0f, std::min(1.0f, output / 32768.0f));
+      const float amplified = output / 32768.0f * input_gain;
+      const float magnitude = std::abs(amplified);
+      level_square_sum += static_cast<double>(amplified) * amplified;
+      ++level_sample_count;
+      peak_level = std::max(peak_level, magnitude);
+      if (magnitude > 1.0f) ++clipped_sample_count;
+      samples[i] = std::max(-1.0f, std::min(1.0f, amplified));
+    }
+    const auto now = std::chrono::steady_clock::now();
+    if (now - last_level_log >= std::chrono::seconds(10) &&
+        level_sample_count > 0) {
+      const double rms = std::sqrt(level_square_sum / level_sample_count);
+      const double clipped_percent =
+          100.0 * clipped_sample_count / level_sample_count;
+      std::cerr << "[wake] input level: gain=" << input_gain
+                << " rms=" << rms << " peak=" << peak_level
+                << " clipped=" << clipped_percent << "%" << std::endl;
+      level_square_sum = 0.0;
+      level_sample_count = 0;
+      clipped_sample_count = 0;
+      peak_level = 0.0f;
+      last_level_log = now;
     }
     SherpaOnnxOnlineStreamAcceptWaveform(
         stream, 16000, samples.data(), static_cast<int32_t>(samples.size()));

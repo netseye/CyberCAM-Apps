@@ -2,6 +2,7 @@ import hashlib
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 from wakeword import READY_MARKER, WakeWordEngine, detected_keyword, is_detection_line
 
@@ -45,11 +46,57 @@ class WakeWordTests(unittest.TestCase):
             self.assertTrue(engine.persistent_available)
             self.assertTrue(engine.available)
 
+    def test_existing_persistent_capture_confirms_ready_without_resignal(self):
+        class Process:
+            pid = 123
+
+            @staticmethod
+            def poll():
+                return None
+
+        ready = []
+        engine = WakeWordEngine(
+            "/app", {}, lambda: ready.append(True), lambda _: None, lambda _: None
+        )
+        engine._process = Process()
+        engine._model_ready = True
+        engine._listening = True
+
+        with mock.patch.object(engine, "_resume_process") as resume:
+            self.assertTrue(engine._start_persistent())
+
+        self.assertEqual(ready, [True])
+        resume.assert_not_called()
+
+    def test_resume_signal_is_suppressed_once_capture_is_listening(self):
+        class Process:
+            pid = 123
+
+            @staticmethod
+            def poll():
+                return None
+
+        engine = WakeWordEngine(
+            "/app", {}, lambda: None, lambda _: None, lambda _: None
+        )
+        engine._process = Process()
+        engine._want_listening = True
+        engine._listening = True
+
+        with mock.patch("wakeword.os.kill") as kill:
+            engine._resume_process(engine._process)
+
+        kill.assert_not_called()
+
     def test_command_uses_private_assets_and_threshold(self):
         with tempfile.TemporaryDirectory() as app_dir:
             engine = WakeWordEngine(
                 app_dir,
-                {"wake_word_threshold": 0.12, "wake_word_score": 2.5},
+                {
+                    "wake_word_threshold": 0.12,
+                    "wake_word_score": 2.5,
+                    "wake_word_input_gain": 2.0,
+                },
                 lambda: None,
                 lambda _: None,
                 lambda _: None,
@@ -61,7 +108,7 @@ class WakeWordTests(unittest.TestCase):
             self.assertTrue(command[0].startswith(os.path.join(app_dir, "wake")))
             daemon = engine.daemon_command()
             self.assertTrue(daemon[0].endswith("wake/native/wakeword-daemon"))
-            self.assertEqual(daemon[-2:], ["2.5", "0.12"])
+            self.assertEqual(daemon[-3:], ["2.5", "0.12", "2.0"])
             guarded = engine.guarded_command(daemon)
             self.assertEqual(guarded[2], str(os.getpid()))
             self.assertTrue(guarded[1].endswith("wake/parent_guard.py"))
@@ -75,7 +122,7 @@ class WakeWordTests(unittest.TestCase):
             command = engine.command()
             self.assertIn("--keywords-threshold=0.1", command)
             self.assertIn("--keywords-score=3.5", command)
-            self.assertEqual(engine.daemon_command()[-2:], ["3.5", "0.1"])
+            self.assertEqual(engine.daemon_command()[-3:], ["3.5", "0.1", "1.8"])
 
     def test_explicit_zero_score_and_threshold_are_preserved(self):
         with tempfile.TemporaryDirectory() as app_dir:
@@ -89,7 +136,20 @@ class WakeWordTests(unittest.TestCase):
             command = engine.command()
             self.assertIn("--keywords-threshold=0.0", command)
             self.assertIn("--keywords-score=0.0", command)
-            self.assertEqual(engine.daemon_command()[-2:], ["0.0", "0.0"])
+            self.assertEqual(engine.daemon_command()[-3:], ["0.0", "0.0", "1.8"])
+
+    def test_invalid_input_gain_uses_safe_default(self):
+        with tempfile.TemporaryDirectory() as app_dir:
+            for value in ("invalid", float("nan"), 0.1, 8):
+                with self.subTest(value=value):
+                    engine = WakeWordEngine(
+                        app_dir,
+                        {"wake_word_input_gain": value},
+                        lambda: None,
+                        lambda _: None,
+                        lambda _: None,
+                    )
+                    self.assertEqual(engine.daemon_command()[-1], "1.8")
 
     def test_bundled_binaries_target_riscv64(self):
         app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
