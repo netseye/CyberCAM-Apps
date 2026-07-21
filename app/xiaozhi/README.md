@@ -2,6 +2,14 @@
 
 在核桃派 CyberCAM 上运行的小智语音助手。应用使用官方小智 WebSocket 协议，麦克风音频以 16 kHz 单声道、60 ms Opus 帧上传，服务端语音回复实时解码到板载扬声器。
 
+## 效果
+
+![小智语音助手演示](./assets/demo.gif)
+
+| 待机唤醒 | 正在聆听 | 语音回答 |
+| --- | --- | --- |
+| ![待机唤醒](./assets/screen-idle.png) | ![正在聆听](./assets/screen-listening.png) | ![语音回答](./assets/screen-speaking.png) |
+
 ## 功能
 
 - 官方 OTA 配置发现和设备激活码（K230 默认使用激活协议 v1）
