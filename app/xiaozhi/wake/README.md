@@ -2,6 +2,8 @@
 
 App 已内置以下资源，部署时随 `/data/app/xiaozhi/wake` 一起复制，不替换系统动态库：
 
+需要修改关键词时，请参阅[修改离线唤醒词](../WAKE_WORD.md)。
+
 - `runtime-spacemit/`：sherpa-onnx v1.13.2 `linux-riscv64-spacemit-shared`
 - `model/`：`sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01`
 - `keywords.txt`：本 App 的“小智小智”拼音 token、增益和触发阈值
