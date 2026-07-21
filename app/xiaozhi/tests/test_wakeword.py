@@ -67,6 +67,20 @@ class WakeWordTests(unittest.TestCase):
             self.assertTrue(guarded[1].endswith("wake/parent_guard.py"))
             self.assertEqual(guarded[3:], daemon)
 
+    def test_explicit_zero_score_and_threshold_are_preserved(self):
+        with tempfile.TemporaryDirectory() as app_dir:
+            engine = WakeWordEngine(
+                app_dir,
+                {"wake_word_threshold": 0, "wake_word_score": 0},
+                lambda: None,
+                lambda _: None,
+                lambda _: None,
+            )
+            command = engine.command()
+            self.assertIn("--keywords-threshold=0.0", command)
+            self.assertIn("--keywords-score=0.0", command)
+            self.assertEqual(engine.daemon_command()[-2:], ["0.0", "0.0"])
+
     def test_bundled_binaries_target_riscv64(self):
         app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         binaries = (

@@ -13,6 +13,13 @@ IGNORED_AFTER_READY = ("Use recording device:", "Current sample rate:")
 KEYWORD_PATTERN = re.compile(r'"keyword"\s*:\s*"([^"]+)"')
 
 
+def _config_float(config, name, default):
+    value = config.get(name)
+    if value is None or value == "":
+        value = default
+    return float(value)
+
+
 def is_detection_line(line, ready=False):
     line = str(line or "").strip()
     if not ready or not line:
@@ -95,8 +102,8 @@ class WakeWordEngine:
     def command(self):
         binary, tokens, encoder, decoder, joiner, keywords = self._required_paths()
         device = str(self.config.get("wake_word_device") or "plughw:0,0")
-        score = float(self.config.get("wake_word_score") or 2.0)
-        threshold = float(self.config.get("wake_word_threshold") or 0.18)
+        score = _config_float(self.config, "wake_word_score", 2.0)
+        threshold = _config_float(self.config, "wake_word_threshold", 0.18)
         return [
             binary,
             "--print-args=false",
@@ -119,8 +126,8 @@ class WakeWordEngine:
             self.app_dir, "wake", "native", "wakeword-daemon"
         )
         device = str(self.config.get("wake_word_device") or "plughw:0,0")
-        score = float(self.config.get("wake_word_score") or 2.0)
-        threshold = float(self.config.get("wake_word_threshold") or 0.18)
+        score = _config_float(self.config, "wake_word_score", 2.0)
+        threshold = _config_float(self.config, "wake_word_threshold", 0.18)
         return [
             binary,
             tokens,
