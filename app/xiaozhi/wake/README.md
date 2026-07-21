@@ -14,7 +14,7 @@ K230 C908 需要 SpaceMi/RVV 构建，并显式指定 `model-type=zipformer2`。
 部署时复制完整 App 目录即可，不再需要运行安装脚本：
 
 ```sh
-cp -a app/xiaozhi /data/app/
+./app/xiaozhi/deploy.sh 10.10.11.213
 ```
 
 维护者修改 `native/wakeword_daemon.cpp` 后，可在 K230 上重新构建并更新内置文件：
