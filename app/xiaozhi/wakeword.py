@@ -45,9 +45,10 @@ class WakeWordEngine:
 
     @property
     def persistent_available(self):
-        return os.path.isfile(
-            os.path.join(self.app_dir, "wake", "native", "wakeword-daemon")
+        binary = os.path.join(
+            self.app_dir, "wake", "native", "wakeword-daemon"
         )
+        return os.path.isfile(binary) and os.access(binary, os.X_OK)
 
     @property
     def warmed_up(self):
@@ -57,22 +58,39 @@ class WakeWordEngine:
     @property
     def available(self):
         guard = os.path.join(self.app_dir, "wake", "parent_guard.py")
-        return os.path.isfile(guard) and all(
-            os.path.isfile(path) for path in self._required_paths()
+        fallback = self._required_paths()[0]
+        executable_available = self.persistent_available or (
+            os.path.isfile(fallback) and os.access(fallback, os.X_OK)
+        )
+        return (
+            os.path.isfile(guard)
+            and executable_available
+            and all(os.path.isfile(path) for path in self._asset_paths())
         )
 
-    def _required_paths(self):
+    def _asset_paths(self):
         wake_dir = os.path.join(self.app_dir, "wake")
-        runtime = os.path.join(wake_dir, "runtime-spacemit")
+        runtime = os.path.join(wake_dir, "runtime-spacemit", "lib")
         model = os.path.join(wake_dir, "model")
         return (
-            os.path.join(runtime, "bin", "sherpa-onnx-keyword-spotter-alsa"),
             os.path.join(model, "tokens.txt"),
             os.path.join(model, "encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx"),
             os.path.join(model, "decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx"),
             os.path.join(model, "joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx"),
             os.path.join(wake_dir, "keywords.txt"),
+            os.path.join(runtime, "libsherpa-onnx-c-api.so"),
+            os.path.join(runtime, "libonnxruntime.so.1"),
+            os.path.join(runtime, "libonnxruntime_providers_shared.so"),
+            os.path.join(runtime, "libspacemit_ep.so.2"),
         )
+
+    def _required_paths(self):
+        wake_dir = os.path.join(self.app_dir, "wake")
+        fallback = os.path.join(
+            wake_dir, "runtime-spacemit", "bin", "sherpa-onnx-keyword-spotter-alsa"
+        )
+        tokens, encoder, decoder, joiner, keywords = self._asset_paths()[:5]
+        return fallback, tokens, encoder, decoder, joiner, keywords
 
     def command(self):
         binary, tokens, encoder, decoder, joiner, keywords = self._required_paths()

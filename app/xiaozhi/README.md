@@ -74,14 +74,7 @@
 
 真机目录：`/data/app/xiaozhi`
 
-首次部署到设备后安装固定版本的离线唤醒资源并编译常驻服务：
-
-```sh
-cd /data/app/xiaozhi
-./wake/install.sh
-```
-
-脚本只接受 `riscv64` 设备，下载 sherpa-onnx v1.13.2 SpaceMi 运行库与固定的中文 KWS 模型，校验 SHA-256 后再安装。完成后重新启动 App；模型只在 App 启动时预热一次。
+离线唤醒所需的 K230 `riscv64` 常驻服务、sherpa-onnx v1.13.2 SpaceMi 运行库和中文 INT8 KWS 模型均已随 App 内置。将整个 `app/xiaozhi` 目录复制到设备即可运行，不需要在设备上下载资源、安装依赖或现场编译。模型只在 App 启动时预热一次。
 
 ## 隐私
 

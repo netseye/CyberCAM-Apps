@@ -1,3 +1,4 @@
+import hashlib
 import os
 import tempfile
 import unittest
@@ -24,11 +25,25 @@ class WakeWordTests(unittest.TestCase):
     def test_parent_guard_is_required_even_if_models_exist(self):
         with tempfile.TemporaryDirectory() as app_dir:
             engine = WakeWordEngine(app_dir, {}, lambda: None, lambda _: None, lambda _: None)
-            for path in engine._required_paths():
+            for path in engine._required_paths() + engine._asset_paths():
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, "wb"):
                     pass
+                os.chmod(path, 0o755)
             self.assertFalse(engine.available)
+
+    def test_persistent_bundle_does_not_require_fallback_binary(self):
+        with tempfile.TemporaryDirectory() as app_dir:
+            engine = WakeWordEngine(app_dir, {}, lambda: None, lambda _: None, lambda _: None)
+            guard = os.path.join(app_dir, "wake", "parent_guard.py")
+            daemon = os.path.join(app_dir, "wake", "native", "wakeword-daemon")
+            for path in (guard, daemon) + engine._asset_paths():
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "wb"):
+                    pass
+            os.chmod(daemon, 0o755)
+            self.assertTrue(engine.persistent_available)
+            self.assertTrue(engine.available)
 
     def test_command_uses_private_assets_and_threshold(self):
         with tempfile.TemporaryDirectory() as app_dir:
@@ -51,6 +66,39 @@ class WakeWordTests(unittest.TestCase):
             self.assertEqual(guarded[2], str(os.getpid()))
             self.assertTrue(guarded[1].endswith("wake/parent_guard.py"))
             self.assertEqual(guarded[3:], daemon)
+
+    def test_bundled_binaries_target_riscv64(self):
+        app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        binaries = (
+            os.path.join(app_dir, "wake", "native", "wakeword-daemon"),
+            os.path.join(
+                app_dir,
+                "wake",
+                "runtime-spacemit",
+                "bin",
+                "sherpa-onnx-keyword-spotter-alsa",
+            ),
+        )
+        for binary in binaries:
+            with self.subTest(binary=binary), open(binary, "rb") as stream:
+                header = stream.read(20)
+                self.assertEqual(header[:4], b"\x7fELF")
+                self.assertEqual(int.from_bytes(header[18:20], "little"), 243)
+
+    def test_bundled_assets_match_manifest(self):
+        app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        manifest = os.path.join(app_dir, "wake", "manifest.sha256")
+        with open(manifest, "r", encoding="utf-8") as stream:
+            entries = [line.strip().split(None, 1) for line in stream if line.strip()]
+
+        self.assertGreater(len(entries), 0)
+        for expected, relative_path in entries:
+            path = os.path.join(app_dir, relative_path)
+            digest = hashlib.sha256()
+            with self.subTest(path=relative_path), open(path, "rb") as asset:
+                for block in iter(lambda: asset.read(1024 * 1024), b""):
+                    digest.update(block)
+                self.assertEqual(digest.hexdigest(), expected)
 
 
 if __name__ == "__main__":
