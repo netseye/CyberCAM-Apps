@@ -1,0 +1,17 @@
+{
+  "ota_url": "https://api.tenclass.net/xiaozhi/ota/",
+  "websocket_url": "",
+  "access_token": "",
+  "verify_tls": true,
+  "input_device": null,
+  "output_device": null,
+  "max_listen_seconds": 30,
+  "no_speech_timeout_seconds": 6,
+  "speech_level_threshold": 0.08,
+  "response_timeout_seconds": 15,
+  "wake_word_enabled": true,
+  "wake_word": "小智小智",
+  "wake_word_device": "plughw:0,0",
+  "wake_word_score": 2.0,
+  "wake_word_threshold": 0.18
+}

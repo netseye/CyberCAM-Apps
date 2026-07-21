@@ -1,0 +1,8 @@
+config.json
+device.json
+*.log
+__pycache__/
+tests/__pycache__/
+wake/model/
+wake/runtime-spacemit/
+wake/native/wakeword-daemon
