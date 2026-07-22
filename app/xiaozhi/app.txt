@@ -1,0 +1,4 @@
+#APP信息配置文件/APP Config information
+name_cn="小智"
+name_en="Xiaozhi"
+index=24
