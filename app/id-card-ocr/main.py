@@ -28,10 +28,10 @@ CONTROLS_Y = PREVIEW_Y + H
 GUIDE_CORNERS = ((72, 23), (568, 23), (568, 336), (72, 336))
 FONT = "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
 MODEL_FILES = ("ocr_det_int16.kmodel", "ocr_rec_int16.kmodel", "dict.txt")
-MODEL_MIN_BYTES = {
-    "ocr_det_int16.kmodel": 1_000_000,
-    "ocr_rec_int16.kmodel": 2_000_000,
-    "dict.txt": 1_000,
+MODEL_EXPECTED_BYTES = {
+    "ocr_det_int16.kmodel": 5_030_752,
+    "ocr_rec_int16.kmodel": 13_008_216,
+    "dict.txt": 32_521,
 }
 
 ft = cv2.freetype.createFreeType2()
@@ -49,11 +49,12 @@ def _model_path(filename):
     local = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
     deployed = os.path.join("/data/app/id-card-ocr", filename)
     # 系统自带 OCR 应用使用同一套 KPU 模型；部署时可复用，避免在不稳定
-    # Wi-Fi 上重复传 17 MB。尺寸门槛也会自动忽略中断上传留下的残缺文件。
+    # Wi-Fi 上重复传 17 MB。使用已知资源的精确大小，避免较大的中断上传
+    # 残片抢在完整共享模型之前被选中。
     shared = os.path.join("/data/app/ocr", filename)
     for candidate in (local, deployed, shared, filename):
-        if (os.path.exists(candidate) and
-                os.path.getsize(candidate) >= MODEL_MIN_BYTES[filename]):
+        if (os.path.isfile(candidate) and
+                os.path.getsize(candidate) == MODEL_EXPECTED_BYTES[filename]):
             return candidate
     raise FileNotFoundError(filename + " 模型文件缺失")
 
@@ -129,24 +130,41 @@ class OCRRuntime:
 
 
 def _result_score(parsed, rows):
-    confidence = sum(row["confidence"] for row in rows) / max(1, len(rows))
-    return parsed["field_count"] * 2 + (4 if parsed["id_valid"] else 0) + confidence
+    return core.ocr_candidate_score(parsed, rows)
 
 
 def recognize_card(runtime, card):
-    '''固定 ROI 增强后识别；字段过少时尝试 180°并保留高分结果。'''
+    '''主画布确定方向，再用放大画布精读民族和地址。'''
     canvas = vision.build_id_ocr_canvas(card)
     rows = runtime.run(canvas)
     parsed = core.parse_id_card_roi_rows(rows, canvas.shape[0])
     best = (parsed, rows)
-    if parsed["field_count"] < 3 or not parsed["id_number"]:
+    best_card = card
+    if core.should_retry_orientation(parsed):
         rotated = cv2.rotate(card, cv2.ROTATE_180)
         other_canvas = vision.build_id_ocr_canvas(rotated)
         other_rows = runtime.run(other_canvas)
         other = core.parse_id_card_roi_rows(other_rows, other_canvas.shape[0])
         if _result_score(other, other_rows) > _result_score(parsed, rows):
             best = (other, other_rows)
+            best_card = rotated
         other_canvas = None
+    parsed, rows = best
+    detail_canvas = vision.build_id_detail_ocr_canvas(best_card)
+    detail_rows = runtime.run(detail_canvas)
+    detail = core.parse_id_detail_rows(detail_rows, detail_canvas.shape[0])
+    parsed = core.merge_id_detail_fields(parsed, detail)
+    all_rows = rows + detail_rows
+    if not parsed.get("ethnicity"):
+        ethnicity_canvas = vision.build_ethnicity_retry_canvas(best_card)
+        ethnicity_rows = runtime.run(ethnicity_canvas)
+        ethnicity_detail = core.parse_ethnicity_retry_rows(ethnicity_rows)
+        parsed = core.merge_id_detail_fields(parsed, ethnicity_detail)
+        all_rows += ethnicity_rows
+        ethnicity_canvas = None
+    # 原文页同时显示主识别和放大识别结果，便于区分模型错误与字段解析错误。
+    best = (parsed, all_rows)
+    detail_canvas = best_card = None
     canvas = None
     return best
 
@@ -180,6 +198,9 @@ class TouchInput:
         self.running = False
         self._fd = None
         self._x = self._y = 0
+        self._generation = 0
+        self._down_generation = None
+        self._points_lock = threading.Lock()
         try:
             fd = os.open(device, os.O_RDONLY)
             self._minx, self._maxx = _eviocgabs(fd, ABS_X)
@@ -219,8 +240,16 @@ class TouchInput:
                     self._x = value
                 elif kind == EV_ABS and code == ABS_Y:
                     self._y = value
-                elif kind == EV_KEY and code == BTN_TOUCH and value == 0:
-                    self.points.append((self._x, self._y))
+                elif kind == EV_KEY and code == BTN_TOUCH:
+                    with self._points_lock:
+                        if value == 1:
+                            self._down_generation = self._generation
+                        elif value == 0:
+                            # 页面切换会递增 generation；跨越识别/切页边界的
+                            # 手势不能在新页面被解释成显示号码等动作。
+                            if self._down_generation == self._generation:
+                                self.points.append((self._x, self._y))
+                            self._down_generation = None
         finally:
             try:
                 os.close(fd)
@@ -229,15 +258,22 @@ class TouchInput:
             self._fd = None
 
     def poll(self):
-        if not self.points:
-            return None
-        x, y = self.points.popleft()
+        with self._points_lock:
+            if not self.points:
+                return None
+            x, y = self.points.popleft()
         nx = (x - self._minx) / max(1, self._maxx - self._minx)
         ny = (y - self._miny) / max(1, self._maxy - self._miny)
         nx, ny = max(0.0, min(1.0, nx)), max(0.0, min(1.0, ny))
         if self.flipped:
             nx, ny = 1.0 - nx, 1.0 - ny
         return nx, ny
+
+    def discard_pending(self):
+        '''丢弃已排队及当前尚未抬起的手势。'''
+        with self._points_lock:
+            self._generation += 1
+            self.points.clear()
 
     def close(self):
         self.running = False
@@ -388,7 +424,8 @@ def _draw_wrapped(screen, value, x, y, chars=24, lines=2,
         text(screen, part, (x, y + index * (height + 7)), color, height)
 
 
-def compose_result(result, rows, reveal=False, raw=False, notice=None):
+def compose_result(result, rows, reveal=False, raw=False, notice=None,
+                   status="reliable"):
     screen = _base_screen()
     cv2.rectangle(screen, (20, 70), (620, 405), (22, 27, 34), -1)
     cv2.rectangle(screen, (20, 70), (620, 405), (55, 66, 76), 1)
@@ -403,6 +440,17 @@ def compose_result(result, rows, reveal=False, raw=False, notice=None):
             text(screen, row["text"][:34], (42, y), (225, 228, 232), 18)
             text(screen, "%d%%" % round(row["confidence"] * 100),
                  (558, y), (125, 135, 142), 15)
+    elif status in ("back", "unreliable"):
+        if status == "back":
+            title = "检测到身份证反面"
+            detail = "请翻到带头像和身份证号码的一面"
+        else:
+            title = "未可靠识别身份证正面"
+            detail = "请重新对准边框，并避免模糊和反光"
+        text(screen, title, (185, 168), (0, 195, 255), 27)
+        text(screen, detail, (150, 222), (210, 215, 220), 21)
+        text(screen, "点击下方“重新扫描”返回取景", (176, 276),
+             (135, 150, 158), 18)
     else:
         text(screen, "姓名", (42, 88), (125, 145, 155), 17)
         text(screen, _value(result, "name"), (122, 84), (240, 242, 245), 23)
@@ -439,8 +487,11 @@ def compose_result(result, rows, reveal=False, raw=False, notice=None):
     cv2.line(screen, (0, CONTROLS_Y), (SCREEN_W, CONTROLS_Y), (55, 62, 70), 1)
     cv2.line(screen, (160, CONTROLS_Y), (160, SCREEN_H), (45, 52, 60), 1)
     cv2.line(screen, (480, CONTROLS_Y), (480, SCREEN_H), (45, 52, 60), 1)
-    text(screen, "隐藏号码" if reveal else "显示号码", (45, 440),
-         (180, 185, 190), 18)
+    if status in ("back", "unreliable"):
+        text(screen, "无有效号码", (45, 440), (105, 112, 120), 18)
+    else:
+        text(screen, "隐藏号码" if reveal else "显示号码", (45, 440),
+             (180, 185, 190), 18)
     text(screen, "重新扫描", (280, 440), (245, 245, 245), 19)
     text(screen, "字段" if raw else "OCR原文", (548, 440),
          (180, 185, 190), 18)
@@ -478,6 +529,7 @@ def main():
 
     cap = touch = key = None
     frame = last_frame = last_corners = result = rows = result_screen = None
+    frame_candidates = deque(maxlen=3)
     runtime = OCRRuntime()
     try:
         cap = _open_camera(flipped)
@@ -489,6 +541,7 @@ def main():
         detected = None
         state = "preview"
         result, rows = core.parse_id_card([]), []
+        result_status = "unreliable"
         reveal = raw = False
         result_screen = None
         result_notice = None
@@ -499,6 +552,7 @@ def main():
         notice_until = 0.0
         prev_key = False
         key_down_at = None
+        quality_override_until = 0.0
 
         while True:
             now = time.monotonic()
@@ -523,6 +577,7 @@ def main():
                 break
 
             if state == "preview" and action == "LIGHT":
+                quality_override_until = 0.0
                 requested = not light_on
                 if key.set_light(requested):
                     light_on = requested
@@ -545,10 +600,19 @@ def main():
                     key.pulse(now, 0.03)
                 elif action == "RESCAN":
                     _show(compose_processing("正在释放 AI 并恢复取景…"))
-                    runtime.unload()
+                    touch.discard_pending()
+                    if not runtime.unload():
+                        notice = "AI 资源释放失败，请退出后重试"
+                        notice_until = time.monotonic() + 2.5
+                        result_screen = None
+                        key.pulse(now)
+                        continue
                     cap = _open_camera(flipped)
+                    touch.discard_pending()
+                    frame_candidates.clear()
                     state = "preview"
                     result, rows = core.parse_id_card([]), []
+                    result_status = "unreliable"
                     result_screen = result_notice = None
                     reveal = raw = False
                     light_on = False
@@ -562,7 +626,8 @@ def main():
                 if (result_screen is None or result_dirty or
                         visible_notice != result_notice):
                     result_screen = compose_result(
-                        result, rows, reveal, raw, visible_notice)
+                        result, rows, reveal, raw, visible_notice,
+                        result_status)
                     result_notice = visible_notice
                     _show(result_screen)
                 key.update(now)
@@ -580,32 +645,72 @@ def main():
             detect_tick += 1
             ready, smoothed = gate.update(detected, now)
             last_corners = smoothed
+            snapshot_corners = (None if last_corners is None else
+                                tuple((float(x), float(y))
+                                      for x, y in last_corners))
+            frame_candidates.append((last_frame, snapshot_corners))
 
             if action == "SCAN":
                 key.pulse(now)
-                processing = ("正在增强标准字段…" if last_corners is None
-                              else "正在矫正并增强字段…")
-                _show(compose_processing(processing))
+                touch.discard_pending()
                 card = None
                 try:
-                    # 自动四角不可用时按屏幕上的标准身份证框裁切，手动快门永不被门控。
-                    scan_corners = last_corners or GUIDE_CORNERS
-                    card = vision.warp_card(last_frame, scan_corners)
+                    card, quality = vision.select_best_card(
+                        list(frame_candidates), GUIDE_CORNERS)
+                except Exception as exc:
+                    print("[quality] 取景评分失败:",
+                          type(exc).__name__, str(exc))
+                    notice = "无法读取取景帧，请重新对准"
+                    notice_until = time.monotonic() + 2.0
+                    continue
+
+                quality_issues = quality["issues"]
+                if quality_issues and now >= quality_override_until:
+                    issue_text = "、".join(quality_issues[:2])
+                    notice = issue_text + " · 再点识别可继续"
+                    notice_until = now + 2.5
+                    quality_override_until = notice_until
+                    print("[quality] score=%.3f sharp=%.1f bright=%.1f "
+                          "contrast=%.1f highlight=%.3f issues=%s" % (
+                              quality["score"], quality["sharpness"],
+                              quality["brightness"], quality["contrast"],
+                              quality["highlight_ratio"], issue_text))
+                    card = None
+                    continue
+
+                quality_override_until = 0.0
+                processing = ("正在增强三帧中最佳画面…"
+                              if len(frame_candidates) > 1 else
+                              "正在矫正并增强字段…")
+                _show(compose_processing(processing))
+                try:
                     # K230 的相机和 KPU 都依赖 CMA 连续内存。两者并存会在 OCR
                     # 首次推理时申请大块 CMA 失败，并让 nncase 原生库 SIGSEGV。
                     # 证件已复制到普通内存后先释放相机，再运行 KPU，避免争抢。
                     cap = _release_camera(cap)
+                    frame_candidates.clear()
                     frame = last_frame = last_corners = detected = None
                     gate.reset()
                     gc.collect()
                     print("[memory] 摄像头已释放，开始 KPU OCR")
                     result, rows = recognize_card(runtime, card)
+                    touch.discard_pending()
+                    result_status = core.recognition_status(result, rows)
                     state = "result"
                     reveal = raw = False
-                    notice = "识别完成 · 原图未保存"
+                    if result_status == "reliable":
+                        notice = ("识别完成 · 质量偏低请仔细核对"
+                                  if quality_issues else
+                                  "识别完成 · 原图未保存")
+                    elif result_status == "partial":
+                        notice = "部分字段已识别 · 请仔细核对"
+                    elif result_status == "back":
+                        notice = "检测到反面 · 请翻面重扫"
+                    else:
+                        notice = "未可靠识别 · 请重新扫描"
                     notice_until = time.monotonic() + 2.0
                     result_screen = compose_result(
-                        result, rows, reveal, raw, notice)
+                        result, rows, reveal, raw, notice, result_status)
                     result_notice = notice
                     _show(result_screen)
                     continue
@@ -613,18 +718,34 @@ def main():
                     print("[ocr] 识别失败:", type(exc).__name__, str(exc))
                     notice = "识别失败，请重新对准后再试"
                     notice_until = time.monotonic() + 2.0
-                    runtime.unload()
+                    # 此 try 也覆盖结果画布生成和 Display.show；它们可能在
+                    # state 已切到 result 后失败。恢复相机前必须完整回到预览态，
+                    # 否则下一次“重新扫描”会在现有 Sensor 未释放时再次打开相机。
+                    state = "preview"
+                    result, rows = core.parse_id_card([]), []
+                    result_status = "unreliable"
+                    result_screen = result_notice = None
+                    reveal = raw = False
+                    quality_override_until = 0.0
+                    runtime_released = runtime.unload()
                 finally:
                     # 完整证件只存在于取景帧/矫正图，识别后立即释放且不落盘。
                     light_on = False
                     key.set_light(False)
+                    frame_candidates.clear()
                     card = frame = last_frame = last_corners = None
                     gc.collect()
 
-                # 只有可捕获的 Python 异常会到这里；恢复相机后从下一帧重画。
+                # 卸载失败意味着 KPU 仍持有 CMA；此时绝不能重新打开相机。
+                if not runtime_released:
+                    print("[memory] AI 资源未释放，退出以交还 CMA")
+                    break
+
+                # 只有可捕获且已安全释放 AI 的异常会到这里；恢复相机后重画。
                 if cap is None:
                     _show(compose_processing("正在恢复取景…"))
                     cap = _open_camera(flipped)
+                    touch.discard_pending()
                 continue
 
             _show(compose_preview(frame, last_corners, ready, light_on,
@@ -638,6 +759,7 @@ def main():
             key.close()
         cap = _release_camera(cap)
         # 不保留上次帧或证件透视图。
+        frame_candidates.clear()
         frame = last_frame = last_corners = result = rows = result_screen = None
         gc.collect()
 

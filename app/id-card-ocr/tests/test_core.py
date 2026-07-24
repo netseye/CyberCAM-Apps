@@ -52,6 +52,18 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(result["id_number"], "11010519491231002X")
         self.assertTrue(result["id_valid"])
 
+    def test_invalid_number_retries_orientation_and_valid_candidate_wins(self):
+        invalid = core.parse_id_card([
+            "姓名测试用户", "住址测试市", "110105194912310021"
+        ])
+        valid = core.parse_id_card(["11010519491231002X"])
+        self.assertTrue(core.should_retry_orientation(invalid))
+        self.assertFalse(core.should_retry_orientation(valid))
+        noisy_rows = [{"confidence": 0.99}] * 8
+        valid_rows = [{"confidence": 0.40}]
+        self.assertGreater(core.ocr_candidate_score(valid, valid_rows),
+                           core.ocr_candidate_score(invalid, noisy_rows))
+
     def test_accepts_labels_and_values_in_separate_boxes(self):
         result = core.parse_id_card([
             "姓名", "张三", "性别", "女", "民族", "汉", "出生",
@@ -124,6 +136,100 @@ class ParserTests(unittest.TestCase):
         result = core.parse_id_card_roi_rows(rows)
         self.assertEqual(result["name"], "")
         self.assertTrue(result["id_valid"])
+
+    def test_roi_parser_reads_sex_without_a_valid_id_number(self):
+        rows = [
+            {"text": "测试用户", "x": 18, "y": 22, "w": 130, "h": 30},
+            {"text": "男", "x": 18, "y": 88, "w": 26, "h": 25},
+            {"text": "汉", "x": 210, "y": 88, "w": 26, "h": 25},
+        ]
+        result = core.parse_id_card_roi_rows(rows)
+        self.assertEqual(result["sex"], "男")
+        self.assertEqual(result["ethnicity"], "汉")
+        self.assertFalse(result["id_valid"])
+
+    def test_detail_parser_corrects_han_confusion_and_replaces_address(self):
+        base = core.parse_id_card([
+            "姓名测试用户", "住址测试省错路", "11010519491231002X"
+        ])
+        detail_rows = [
+            {"text": "汀", "x": 20, "y": 42, "w": 34, "h": 48,
+             "confidence": 0.69},
+            {"text": "「测试省测试市测试区", "x": 20, "y": 190,
+             "w": 310, "h": 34, "confidence": 0.81},
+            {"text": "幸福路一号`", "x": 20, "y": 245,
+             "w": 190, "h": 34, "confidence": 0.78},
+        ]
+        detail = core.parse_id_detail_rows(detail_rows)
+        result = core.merge_id_detail_fields(base, detail)
+        self.assertEqual(result["ethnicity"], "汉")
+        self.assertEqual(result["address"],
+                         "测试省测试市测试区幸福路一号")
+        self.assertEqual(result["field_count"], 6)
+
+    def test_detail_address_rejects_short_garbage(self):
+        base = core.parse_id_card(["住址北京市朝阳区幸福路一号"])
+        detail = {
+            "ethnicity": "", "ethnicity_confidence": 0.0,
+            "ethnicity_corrected": False,
+            "address": "A1?", "address_confidence": 0.99,
+            "raw_lines": ["A1?"],
+        }
+        result = core.merge_id_detail_fields(base, detail)
+        self.assertEqual(result["address"], "北京市朝阳区幸福路一号")
+
+    def test_corrected_ethnicity_does_not_override_exact_base_value(self):
+        base = core.parse_id_card(["民族苗"])
+        detail = {
+            "ethnicity": "汉", "ethnicity_confidence": 0.92,
+            "ethnicity_corrected": True, "address": "",
+            "address_confidence": 0.0, "raw_lines": ["汀"],
+        }
+        result = core.merge_id_detail_fields(base, detail)
+        self.assertEqual(result["ethnicity"], "苗")
+
+    def test_ethnicity_retry_prefers_exact_dictionary_match(self):
+        detail = core.parse_ethnicity_retry_rows([
+            {"text": "汀", "x": 20, "y": 30, "w": 30, "h": 45,
+             "confidence": 0.95},
+            {"text": "民族汉", "x": 20, "y": 240, "w": 120, "h": 42,
+             "confidence": 0.52},
+        ])
+        self.assertEqual(detail["ethnicity"], "汉")
+        self.assertFalse(detail["ethnicity_corrected"])
+
+
+class RecognitionStatusTests(unittest.TestCase):
+    def test_distinguishes_reliable_partial_back_and_unreliable(self):
+        reliable = core.parse_id_card([
+            "姓名张三", "民族汉", "住址北京市幸福路",
+            "11010519491231002X",
+        ])
+        self.assertEqual(core.recognition_status(reliable, []), "reliable")
+
+        number_only = core.parse_id_card(["11010519491231002X"])
+        self.assertEqual(core.recognition_status(number_only, []), "partial")
+
+        back = core.parse_id_card([])
+        back_rows = [
+            {"text": "中华人民共和国", "confidence": 0.8},
+            {"text": "签发机关 测试市公安局", "confidence": 0.8},
+            {"text": "有效期限 2020.01.01-2040.01.01", "confidence": 0.8},
+        ]
+        self.assertEqual(core.recognition_status(back, back_rows), "back")
+
+        weak = core.parse_id_card(["测试用户"])
+        self.assertEqual(core.recognition_status(weak, []), "unreliable")
+
+    def test_detected_back_beats_invalid_partial_hallucination(self):
+        back = core.parse_id_card([])
+        back_rows = [{"text": "有效期限", "confidence": 0.45}]
+        invalid_partial = core.parse_id_card([
+            "姓名测试用户", "性别男", "住址测试市"
+        ])
+        noisy_rows = [{"text": "噪声", "confidence": 0.99}] * 6
+        self.assertGreater(core.ocr_candidate_score(back, back_rows),
+                           core.ocr_candidate_score(invalid_partial, noisy_rows))
 
 
 class StabilityTests(unittest.TestCase):

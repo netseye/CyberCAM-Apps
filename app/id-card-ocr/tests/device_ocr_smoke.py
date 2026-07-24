@@ -40,27 +40,27 @@ def main():
     put(ft, card, "公民身份号码", 34, 340, 23)
     put(ft, card, "11010519491231002X", 195, 334, 27)
 
-    canvas = vision.build_id_ocr_canvas(card)
     runtime = app_main.OCRRuntime()
     cycles = max(1, int(os.environ.get("OCR_SMOKE_CYCLES", "1")))
     try:
         for cycle in range(1, cycles + 1):
             try:
-                rows = runtime.run(canvas)
-                print("cycle=%d synthetic_roi_boxes=%d" % (cycle, len(rows)))
+                result, rows = app_main.recognize_card(runtime, card)
+                print("cycle=%d synthetic_boxes=%d" % (cycle, len(rows)))
                 for row in rows:
                     print("%.3f|x=%d y=%d w=%d h=%d|%s" % (
                         row["confidence"], row["x"], row["y"], row["w"],
                         row["h"], row["text"]))
                 if not rows:
                     raise SystemExit("KPU OCR returned no text boxes")
-                result = core.parse_id_card_roi_rows(rows)
                 print("field_count=", result["field_count"])
                 print("id_valid=", result["id_valid"])
                 if result["name"] != "测试用户":
                     raise SystemExit("name mismatch")
                 if result["address"] != "测试省测试市测试路一号":
                     raise SystemExit("address mismatch")
+                if result["ethnicity"] != "汉":
+                    raise SystemExit("ethnicity mismatch")
                 if not result["id_valid"]:
                     raise SystemExit("ID number checksum failed")
             finally:
