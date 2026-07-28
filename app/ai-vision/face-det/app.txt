@@ -2,4 +2,5 @@
 
 name_cn="人脸检测" #中文名称
 name_en="Face Det" #English Name
+version="1.0.0" #版本号
 index=6 #排列顺序
