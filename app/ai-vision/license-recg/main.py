@@ -1,8 +1,7 @@
-"""
-车牌检测+提取
-
-"""
-
+'''
+实验名称：车牌识别
+实验平台：CyberCAM
+'''
 
 import cv2, time, os, colorsys
 from walnutpi import kpu, Display, Sensor, IDE, direction
@@ -12,8 +11,8 @@ from walnutpi import kpu, Display, Sensor, IDE, direction
 if os.path.exists("./licence_det.kmodel"):
     det_model_path = "./licence_det.kmodel"
 # 使用系统绝对路径（IDE运行调试）
-elif os.path.exists("/data/app/licence_detect/licence_det.kmodel"):
-    det_model_path = "/data/app/licence_detect/licence_det.kmodel"
+elif os.path.exists("/data/app/license-recg/licence_det.kmodel"):
+    det_model_path = "/data/app/license-recg/licence_det.kmodel"
 else:
     raise FileNotFoundError("licence_det.kmodel 模型文件缺失，请检查当前路径与系统路径下的模型文件是否存在。")
 
@@ -21,8 +20,8 @@ else:
 if os.path.exists("./licence_rec.kmodel"):
     rec_model_path = "./licence_rec.kmodel"
 # 使用系统绝对路径（IDE运行调试）
-elif os.path.exists("/data/app/licence_detect/licence_rec.kmodel"):
-    rec_model_path = "/data/app/licence_detect/licence_rec.kmodel"
+elif os.path.exists("/data/app/license-recg/licence_rec.kmodel"):
+    rec_model_path = "/data/app/license-recg/licence_rec.kmodel"
 else:
     raise FileNotFoundError("licence_rec.kmodel 模型文件缺失，请检查当前路径与系统路径下的模型文件是否存在。")
 
@@ -30,8 +29,8 @@ else:
 if os.path.exists("./anchors_640.bin"):
     anchors_bin_path = "./anchors_640.bin"
 # 使用系统绝对路径（IDE运行调试）
-elif os.path.exists("/data/app/licence_detect/anchors_640.bin"):
-    anchors_bin_path = "/data/app/licence_detect/anchors_640.bin"
+elif os.path.exists("/data/app/license-recg/anchors_640.bin"):
+    anchors_bin_path = "/data/app/license-recg/anchors_640.bin"
 else:
     raise FileNotFoundError("anchors_640.bin 文件缺失，请检查当前路径与系统路径下的模型文件是否存在。")
 

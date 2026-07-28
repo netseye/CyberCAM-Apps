@@ -1,3 +1,4 @@
 # Ignore files
 tmp/
 *.deb
+.vscode/

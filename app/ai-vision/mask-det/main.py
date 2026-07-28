@@ -1,7 +1,6 @@
 '''
-实验名称：人脸检测
+实验名称：口罩识别
 实验平台：CyberCAM
-说明：单个或多个人脸检测
 '''
 
 import cv2, time, os
@@ -14,10 +13,10 @@ if os.path.exists("./face_detection_320.kmodel") and os.path.exists("./prior_dat
     anchors_path = "./prior_data_320.bin"
 
 # 使用系统绝对路径（IDE运行调试）
-elif os.path.exists("/data/app/face-mask/face_detection_320.kmodel") and os.path.exists("/data/app/face-mask/prior_data_320.bin") and os.path.exists("/data/app/face-mask/face_mask.kmodel"):
-    det_model_path = "/data/app/face-mask/face_detection_320.kmodel"
-    anchors_path = "/data/app/face-mask/prior_data_320.bin"
-    mask_model_path = "/data/app/face-mask/face_mask.kmodel"
+elif os.path.exists("/data/app/mask-det/face_detection_320.kmodel") and os.path.exists("/data/app/mask-det/prior_data_320.bin") and os.path.exists("/data/app/mask-det/face_mask.kmodel"):
+    det_model_path = "/data/app/mask-det/face_detection_320.kmodel"
+    anchors_path = "/data/app/mask-det/prior_data_320.bin"
+    mask_model_path = "/data/app/mask-det/face_mask.kmodel"
 else:
     raise FileNotFoundError("模型文件缺失，请检查当前路径与系统路径下的模型文件是否存在。")
 
@@ -113,7 +112,7 @@ while True:
             label += "无"
 
         # 绘制戴口罩的概率
-        putText_Chinese(img, label, (result.x, max(result.y, 24)), fontScale=30, color=color)
+        putText_Chinese(img, label, (result.x+5, max(result.y-5, 24)), fontScale=30, color=color)
         
         # 绘制 5 个关键点
         cv2.circle(img, (result.left_eye.x, result.left_eye.y), 4, (0, 0, 255), -1) # 左眼
