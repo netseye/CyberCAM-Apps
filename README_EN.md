@@ -28,7 +28,8 @@ Take the YOLO11 detection APP as an example. Open the `yolo11-det` folder, the f
 ## APP List
 
 ### AI Vision (ai-vision)
-**【Efficient visual recognition examples】**
+
+Machine vision recognition examples.
 
 - Face:
     - Face Detection (5 Landmarks): [face-det](./app/ai-vision/face-det)
@@ -49,30 +50,37 @@ Take the YOLO11 detection APP as an example. Open the `yolo11-det` folder, the f
 - YOLO11 Classification: [yolo11-cls](./app/ai-vision/yolo11-cls)
 
 ### AI Agent (ai-agent)
-**【Voice dialogue, smart assistant, LLM interactive agent】**
+
+Voice dialogue, smart assistant, LLM interactive agent.
 
 - XiaoZhi AI: [xiaozhi](./app/ai-agent/xiaozhi/)
 
 ### Desktop Widget (desktop-widget)
-**【Weather clock, calendar, system monitoring, to-do list and other info-display APPs】**
+
+Weather clock, calendar, system monitoring, to-do list and other info-display apps.
 
 ### Smart Home / IoT (smart-home)
-**【Smart home integration, such as device control panel, scene automation, home environment monitoring】**
+
+Smart home integration, such as device control panel, scene automation, home environment monitoring.
 
 ### Education (education)
-**【Flashcards, object recognition, gesture teaching and other edutainment APPs】**
+
+Flashcards, object recognition, gesture teaching and other edutainment apps.
 
 ### Tools (tool)
-**【System debugging, sensor display, utility tools】**
+
+System debugging, sensor display, utility tools.
 
 - IMU Attitude Indicator: [imu-attitude](./app/tool/imu-attitude/)
 - Bluetooth Showcase: [bt-showcase](./app/tool/bt-showcase/)
 
 ### Game (game)
-**【Motion-sensing games, AR interaction, etc】**
+
+Motion-sensing games, AR interaction, etc.
 
 ### Industrial Inspection (industrial)
-**【Defect detection, part counting, assembly line recognition, helmet/uniform detection】**
+
+Defect detection, part counting, assembly line recognition, helmet/uniform detection.
 
 ### Others (other)
 

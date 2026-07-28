@@ -28,7 +28,8 @@ APP目录位于CyberCAM系统文件系统的`/data/app`路径下。
 ## APP列表
 
 ### AI视觉（ai-vision）
-**【高效的视觉识别案例】**
+
+机器视觉识别案例。
 
 - 人脸相关：
     - 人脸检测(五关键点): [face-det](./app/ai-vision/face-det)
@@ -49,30 +50,31 @@ APP目录位于CyberCAM系统文件系统的`/data/app`路径下。
 - YOLO11分类: [yolo11-cls](./app/ai-vision/yolo11-cls)
 
 ### AI智能体（ai-agent）
-**【语音对话、智能助手、大模型交互智能体】**
+
+语音对话、智能助手、大模型交互智能体。
 
 - 小智AI: [xiaozhi](./app/ai-agent/xiaozhi/)
 
 ### 桌面小组件（desktop-widget）
-**【天气时钟、日历、系统监控、待办事项等信息展示型 APP】**
+天气时钟、日历、系统监控、待办事项等信息展示型应用。
 
 ### 智能家居/IoT（smart-home）
-**【与智能家居联动，如设备控制面板、场景联动、家庭环境监测】**
+与智能家居联动，如设备控制面板、场景联动、家庭环境监测。
 
 ### 教育（education）
-**【识字卡片、物体认知、手势教学等寓教于乐类 APP】**
+识字卡片、物体认知、手势教学等寓教于乐类应用。
 
 ### 工具（tool）
-**【系统调试、传感器展示、实用小工具】**
+系统调试、传感器展示、实用小工具。
 
 - IMU姿态仪: [imu-attitude](./app/tool/imu-attitude/)
 - 蓝牙展示: [bt-showcase](./app/tool/bt-showcase/)
 
 ### 游戏（game）
-**【体感游戏、AR 互动等】**
+体感游戏、AR 互动等。
 
 ### 工业质检（industrial）
-**【缺陷检测、零件计数、流水线识别、安全帽/工服检测】**
+缺陷检测、零件计数、流水线识别、安全帽/工服检测。
 
 ### 其它（other）
 
