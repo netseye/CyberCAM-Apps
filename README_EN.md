@@ -83,6 +83,7 @@ Flashcards, object recognition, gesture teaching and other edutainment apps.
 
 System debugging, sensor display, utility tools.
 
+- App Store: [app-store](./app/tool/app-store/)
 - IMU Attitude Indicator: [imu-attitude](./app/tool/imu-attitude/)
 - Bluetooth Showcase: [bt-showcase](./app/tool/bt-showcase/)
 

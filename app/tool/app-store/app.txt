@@ -1,0 +1,5 @@
+#APP信息配置文件/APP Config information
+name_cn="应用商店"
+name_en="App Store"
+version="0.1.0"
+index=2

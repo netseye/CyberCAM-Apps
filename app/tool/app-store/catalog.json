@@ -1,0 +1,1098 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-28T08:18:29Z",
+  "sources": {
+    "official-github": {
+      "kind": "github_tree",
+      "repository": "01studio-lab/CyberCAM-Apps",
+      "ref": "main",
+      "api_base": "https://api.github.com",
+      "raw_base": "https://raw.githubusercontent.com",
+      "raw_mirrors": [
+        "https://gh-proxy.com/https://raw.githubusercontent.com"
+      ]
+    }
+  },
+  "apps": [
+    {
+      "id": "xiaozhi",
+      "name_cn": "小智",
+      "name_en": "Xiaozhi",
+      "category": "ai-agent",
+      "summary_cn": "支持离线唤醒的语音助手",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-agent/xiaozhi",
+      "persistent_files": [
+        "config.json",
+        "device.json"
+      ],
+      "tree_sha": "adfd23c90da3017a3855d65ddd554d8a573bcd93",
+      "files": [
+        {
+          "path": ".gitignore",
+          "mode": "100644",
+          "sha": "995b47e3df7f87fb02196828c2c29ab9d5077743",
+          "size": 62
+        },
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "sha": "6e18aebbcb5d787854f74f7322ee6b1f2ceabf54",
+          "size": 4776
+        },
+        {
+          "path": "WAKE_WORD.md",
+          "mode": "100644",
+          "sha": "d89226ea351cf6c8a166d52c78724c94a38d16f2",
+          "size": 6609
+        },
+        {
+          "path": "activation.py",
+          "mode": "100644",
+          "sha": "b3aef326d586c630020d3bb5499bf308a7c9fbd5",
+          "size": 8235
+        },
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "a2ca4ae8ddb4f0e088ed75e9579af8defc1ab9f6",
+          "size": 90
+        },
+        {
+          "path": "assets/demo.gif",
+          "mode": "100644",
+          "sha": "ab0b4e2751f6f8bebf5941fdb769674cad8416c8",
+          "size": 489229
+        },
+        {
+          "path": "assets/screen-idle.png",
+          "mode": "100644",
+          "sha": "95a54fcb794b6b9b532e452b7a1ab85c3f927b0b",
+          "size": 48930
+        },
+        {
+          "path": "assets/screen-listening.png",
+          "mode": "100644",
+          "sha": "b7c25d49625eb59c3da5d5274f658c189b4f7105",
+          "size": 42973
+        },
+        {
+          "path": "assets/screen-speaking.png",
+          "mode": "100644",
+          "sha": "ed7d2ed6c7ecd9afae98d2dfd4e281081c6e6659",
+          "size": 50175
+        },
+        {
+          "path": "assistant.py",
+          "mode": "100644",
+          "sha": "635a510f312b8e3cae74187f3ae3164635fb51b6",
+          "size": 29667
+        },
+        {
+          "path": "audio.py",
+          "mode": "100644",
+          "sha": "7c1787ac90c0742aa133bee9bcb5466502cc2a59",
+          "size": 6914
+        },
+        {
+          "path": "config.example.json",
+          "mode": "100644",
+          "sha": "6dcc69c1c7419a494558c52e92b80ad5fad65c9d",
+          "size": 486
+        },
+        {
+          "path": "deploy.sh",
+          "mode": "100644",
+          "sha": "f811d1413e3c36983ddd887be11ebc7f68a2642f",
+          "size": 2287
+        },
+        {
+          "path": "devices.py",
+          "mode": "100644",
+          "sha": "f9c131f8daa45ad47d255b9d92f7f1c5cbe50f00",
+          "size": 12858
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "3580fb9c6e42048d6fc60fe2a9f2d70daa97bdc1",
+          "size": 70010
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "23a9812a1c2a14884d9054f52d8ab3e59788ec70",
+          "size": 13451
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "674d29e303cc9b0f8ac3c7fe413376857a032f64",
+          "size": 17423
+        },
+        {
+          "path": "mcp.py",
+          "mode": "100644",
+          "sha": "011a5cae6328c50dec0d23cc17c542595d26254e",
+          "size": 11031
+        },
+        {
+          "path": "protocol.py",
+          "mode": "100644",
+          "sha": "f726f6a4b59b1aa42faa5164a28a594f53e0af51",
+          "size": 6062
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "506b618f5227c5a11a56418c4d9db788c372d3a1",
+          "size": 1076
+        },
+        {
+          "path": "tests/test_activation.py",
+          "mode": "100644",
+          "sha": "005596cb5efd9931c073d1aa5cca76de0549bb9c",
+          "size": 3927
+        },
+        {
+          "path": "tests/test_assistant.py",
+          "mode": "100644",
+          "sha": "f9ae97440ad17ff24b72bb9aaa51b2ea9f443524",
+          "size": 12297
+        },
+        {
+          "path": "tests/test_audio.py",
+          "mode": "100644",
+          "sha": "cda4eb7b8eeaa1524610f2b9c3cd6cda68484812",
+          "size": 1860
+        },
+        {
+          "path": "tests/test_devices.py",
+          "mode": "100644",
+          "sha": "7dae87c4610d9d08a46a5e99cac536f67039946a",
+          "size": 4556
+        },
+        {
+          "path": "tests/test_mcp.py",
+          "mode": "100644",
+          "sha": "d8ef1611be8f95fac0e35f5025f92003535014c2",
+          "size": 5818
+        },
+        {
+          "path": "tests/test_protocol.py",
+          "mode": "100644",
+          "sha": "458f11b9b53b192ef83e1a7b4bf902223e2e7737",
+          "size": 5385
+        },
+        {
+          "path": "tests/test_transport.py",
+          "mode": "100644",
+          "sha": "3d3df7c5cdb5b5ad80de3c71f36a40530f7e0de5",
+          "size": 7662
+        },
+        {
+          "path": "tests/test_wakeword.py",
+          "mode": "100644",
+          "sha": "3ce86eb6ffd0a9c6bf18b6ab0080cc679acef037",
+          "size": 7919
+        },
+        {
+          "path": "transport.py",
+          "mode": "100644",
+          "sha": "46774ad92f1bc97e42b90c17d3a359adfa05ae5c",
+          "size": 10959
+        },
+        {
+          "path": "wake/APACHE-2.0.txt",
+          "mode": "100644",
+          "sha": "7a4a3ea2424c09fbe48d455aed1eaa94d9124835",
+          "size": 11357
+        },
+        {
+          "path": "wake/ONNXRUNTIME-MIT.txt",
+          "mode": "100644",
+          "sha": "48bc6bb4996ac924359e8e28b9ae88970e5ed3fc",
+          "size": 1073
+        },
+        {
+          "path": "wake/ONNXRUNTIME-THIRD-PARTY-NOTICES.txt",
+          "mode": "100644",
+          "sha": "fbd9f9a95f6013d8ecaef81e02b0033e5882a675",
+          "size": 325054
+        },
+        {
+          "path": "wake/README.md",
+          "mode": "100644",
+          "sha": "45708fc6987a75897d6fe5640c6883fee4408dad",
+          "size": 1617
+        },
+        {
+          "path": "wake/THIRD_PARTY_NOTICES.md",
+          "mode": "100644",
+          "sha": "8c657ab12f89e5b6f1f0254e85fd2ef16b12f6a3",
+          "size": 1221
+        },
+        {
+          "path": "wake/keywords.txt",
+          "mode": "100644",
+          "sha": "46f0eac1d0d60ebda3d57586b59d38100bdb4ed0",
+          "size": 100
+        },
+        {
+          "path": "wake/manifest.sha256",
+          "mode": "100644",
+          "sha": "05ce048b94a3a4b0cf05f2d5ed5f347d363ff448",
+          "size": 1238
+        },
+        {
+          "path": "wake/model/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+          "mode": "100644",
+          "sha": "bef15fd6092cc5e65974e9c077831dca448adf32",
+          "size": 181069
+        },
+        {
+          "path": "wake/model/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+          "mode": "100644",
+          "sha": "a739d3a7dd3d10a3cbcf4ed5ad407388fbc09f4c",
+          "size": 4777666
+        },
+        {
+          "path": "wake/model/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+          "mode": "100644",
+          "sha": "fc88aba6dd069c5d5fb829179b2620d9f5944c5c",
+          "size": 65242
+        },
+        {
+          "path": "wake/model/tokens.txt",
+          "mode": "100644",
+          "sha": "5880fbff8f302e941ccf042d81bdbcf35325dc42",
+          "size": 1627
+        },
+        {
+          "path": "wake/native/wakeword-daemon",
+          "mode": "100644",
+          "sha": "2a55598fb0dbcccdd1e72e26b82176373c86630c",
+          "size": 32592
+        },
+        {
+          "path": "wake/native/wakeword_daemon.cpp",
+          "mode": "100644",
+          "sha": "c4d22d5031efce3144cdd0f0121d0883e3ba4da7",
+          "size": 12510
+        },
+        {
+          "path": "wake/parent_guard.py",
+          "mode": "100644",
+          "sha": "0e0b028d470f9fdb1c86fd8163287742c692fab6",
+          "size": 859
+        },
+        {
+          "path": "wake/runtime-spacemit/bin/sherpa-onnx-keyword-spotter-alsa",
+          "mode": "100644",
+          "sha": "8d30542da9692f3c49b02db597585a4c64f2af0b",
+          "size": 410440
+        },
+        {
+          "path": "wake/runtime-spacemit/lib/libonnxruntime.so.1",
+          "mode": "100644",
+          "sha": "10d4645e2fb988b48fa3135b3546f987cc37d8d0",
+          "size": 20367528
+        },
+        {
+          "path": "wake/runtime-spacemit/lib/libonnxruntime_providers_shared.so",
+          "mode": "100644",
+          "sha": "6995c89744e501d1eb5214c61a3d88c86cbb72e7",
+          "size": 6048
+        },
+        {
+          "path": "wake/runtime-spacemit/lib/libsherpa-onnx-c-api.so",
+          "mode": "100644",
+          "sha": "f3c9e346e71be572973c94e85de82dd772687e4b",
+          "size": 3140208
+        },
+        {
+          "path": "wake/runtime-spacemit/lib/libspacemit_ep.so.2",
+          "mode": "100644",
+          "sha": "04e692adc81335e95df7605287fcad738c9fb836",
+          "size": 4961408
+        },
+        {
+          "path": "wakeword.py",
+          "mode": "100644",
+          "sha": "f5e3e34e7e816d1b9678740ea874f2a4c68c2162",
+          "size": 14049
+        }
+      ]
+    },
+    {
+      "id": "face-det",
+      "name_cn": "人脸检测",
+      "name_en": "Face Det",
+      "category": "ai-vision",
+      "summary_cn": "摄像头人脸与五关键点检测",
+      "version": "1.0.0",
+      "source": "official-github",
+      "path": "app/ai-vision/face-det",
+      "tree_sha": "7fa2f4405e9860607b391e387ad5b290bfe49d9d",
+      "files": [
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "sha": "2e716ecaba530377108a7e915a60200883cfd4f4",
+          "size": 248
+        },
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "d3e623d3c19b90b67fe745c5c6bad7b37b8a6871",
+          "size": 166
+        },
+        {
+          "path": "face_detection_320.kmodel",
+          "mode": "100644",
+          "sha": "b80096eb52e7e5665b9c249675db304e97a5edb5",
+          "size": 584576
+        },
+        {
+          "path": "face_detection_640.kmodel",
+          "mode": "100644",
+          "sha": "509b69cceea3f289c0a39e1816954f77d36acf0e",
+          "size": 716216
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "bae9b32c25aa6cc40afa016cf7def2354cf67721",
+          "size": 611061
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "434c5cc9e89821a53eab66d9c750a81af6008f1c",
+          "size": 15294
+        },
+        {
+          "path": "intro.png",
+          "mode": "100644",
+          "sha": "d9168268d752fafe22dbb0e10412ac5d6d27d6d0",
+          "size": 2171445
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "5bb17fc407162e355e77af64aabf55e6403c6d0b",
+          "size": 4143
+        },
+        {
+          "path": "prior_data_320.bin",
+          "mode": "100644",
+          "sha": "4d8aab972a776022267be3ee847867c96eefefe1",
+          "size": 67200
+        },
+        {
+          "path": "prior_data_640.bin",
+          "mode": "100644",
+          "sha": "d60d89eb704169dc3e830ca1c648618a9d6c0c1f",
+          "size": 268800
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        }
+      ]
+    },
+    {
+      "id": "fall-det",
+      "name_cn": "跌倒检测",
+      "name_en": "Fall Det",
+      "category": "ai-vision",
+      "summary_cn": "实时人体跌倒识别",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/fall-det",
+      "tree_sha": "bc42c2a17165544916af9842ed46540b6a587306",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "d8ee4918203f16da2adf3318af4fc73c04135962",
+          "size": 139
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "491d2ba5292be7e04dd98fa10b08fed28846d1b7",
+          "size": 226163
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "92949fd8f195123387819a9ae16f1fe4243bb709",
+          "size": 28105
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "1b59b5e0d5b9aab750b916f4ad9cbba6fe3704d0",
+          "size": 4123
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        },
+        {
+          "path": "yolov5n-falldown.kmodel",
+          "mode": "100644",
+          "sha": "79555309e82ec571ba570f00a6c05dd41b24dba1",
+          "size": 2377208
+        }
+      ]
+    },
+    {
+      "id": "hand-det",
+      "name_cn": "手掌检测",
+      "name_en": "Hand Det",
+      "category": "ai-vision",
+      "summary_cn": "实时手掌目标检测",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/hand-det",
+      "tree_sha": "ad798d54cd7773410bf18da4561cbca723a138c9",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "dc27f41c08c45a80319ed7d38673152ae19f0827",
+          "size": 139
+        },
+        {
+          "path": "hand_det.kmodel",
+          "mode": "100644",
+          "sha": "2fce4489a9e8a5e7a4098c590779edbc8c8226fa",
+          "size": 5976808
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "4536b8750516473cfae4e3f6b3d986306efe92ac",
+          "size": 153118
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "7d6155dfbea8522d9ad9e78aa84588406623584e",
+          "size": 26430
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "58aae09e397755e2d563942e63f7e1434d145756",
+          "size": 3842
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        }
+      ]
+    },
+    {
+      "id": "hand-keypoint",
+      "name_cn": "手掌关键点检测",
+      "name_en": "Hand KeyPoint",
+      "category": "ai-vision",
+      "summary_cn": "手掌关键点姿态识别",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/hand-keypoint",
+      "tree_sha": "bf05ff23fcd945a5e33482bf79435a4bfb45afdc",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "926d01623dc968fede03d068935e3352037130f0",
+          "size": 153
+        },
+        {
+          "path": "hand_det.kmodel",
+          "mode": "100644",
+          "sha": "2fce4489a9e8a5e7a4098c590779edbc8c8226fa",
+          "size": 5976808
+        },
+        {
+          "path": "handkp_det.kmodel",
+          "mode": "100644",
+          "sha": "cb8e2ce1d9042a987feea2949d8b2a725ba61918",
+          "size": 26870480
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "c05de469b9d0afcee3784d5797ac26bb585d9083",
+          "size": 63958
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "b8c9c7760e89b79bd3bb01de0209602b37938303",
+          "size": 13482
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "d8e4647bb076b0daeed10d5a0590bf06688a16d8",
+          "size": 4627
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        }
+      ]
+    },
+    {
+      "id": "hand-keypoint-cls",
+      "name_cn": "手势分类",
+      "name_en": "Hand KeyPoint CLS",
+      "category": "ai-vision",
+      "summary_cn": "基于手部关键点的手势分类",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/hand-keypoint-cls",
+      "tree_sha": "73678b1b8a3510f25a6739874e2eedb20d5895b6",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "448c1b42b50ddef3ce95e341549f110369cab02e",
+          "size": 148
+        },
+        {
+          "path": "hand_det.kmodel",
+          "mode": "100644",
+          "sha": "2fce4489a9e8a5e7a4098c590779edbc8c8226fa",
+          "size": 5976808
+        },
+        {
+          "path": "handkp_det.kmodel",
+          "mode": "100644",
+          "sha": "cb8e2ce1d9042a987feea2949d8b2a725ba61918",
+          "size": 26870480
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "2a89d3cacef3a09da81011266de438354bb05dc5",
+          "size": 96359
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "a28ca9c15639bf6820e9498c4583edbd23fcb35a",
+          "size": 18301
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "0a532e52c8d6ac6a7fa31740ef682a6ae4dc0b06",
+          "size": 5209
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        }
+      ]
+    },
+    {
+      "id": "license-recg",
+      "name_cn": "车牌识别",
+      "name_en": "License Recg",
+      "category": "ai-vision",
+      "summary_cn": "车牌检测与字符识别",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/license-recg",
+      "tree_sha": "f7b8f9b3bb5220fc128dc894913c78ab4c24c078",
+      "files": [
+        {
+          "path": "anchors_640.bin",
+          "mode": "100644",
+          "sha": "ccd87a2ad71b5d5514d5e5db0dcf62e7e4233750",
+          "size": 268800
+        },
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "1b33beacdffa8d31d82dd6dd8f4aa543e01abc47",
+          "size": 143
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "487f932c42c3ee7c6e00914f4eef86c2044b0ff6",
+          "size": 26510
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "afc803ad581179b1351a87f4fe7d51624bec867a",
+          "size": 9349
+        },
+        {
+          "path": "licence_det.kmodel",
+          "mode": "100644",
+          "sha": "a4d82d55f8198585776c1adfaef604de62e039ae",
+          "size": 714632
+        },
+        {
+          "path": "licence_rec.kmodel",
+          "mode": "100644",
+          "sha": "15be0814ca9324008c94c22a0d84124514868d76",
+          "size": 667976
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "035111a3ea5a0010977fc8e5c5b4ad00339f6421",
+          "size": 4762
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        }
+      ]
+    },
+    {
+      "id": "mask-det",
+      "name_cn": "口罩识别",
+      "name_en": "Mask Det",
+      "category": "ai-vision",
+      "summary_cn": "人脸口罩佩戴检测",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/mask-det",
+      "tree_sha": "1ec0c8c8f3ecbb452884113a50d0dc91cd5f6217",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "5991cf6593c2c2b51bf697382560d465893a1b60",
+          "size": 139
+        },
+        {
+          "path": "face_detection_320.kmodel",
+          "mode": "100644",
+          "sha": "b80096eb52e7e5665b9c249675db304e97a5edb5",
+          "size": 584576
+        },
+        {
+          "path": "face_detection_640.kmodel",
+          "mode": "100644",
+          "sha": "509b69cceea3f289c0a39e1816954f77d36acf0e",
+          "size": 716216
+        },
+        {
+          "path": "face_mask.kmodel",
+          "mode": "100644",
+          "sha": "27a496f6333062a5bfe4a28766fcef15d27a8550",
+          "size": 2632760
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "47eb54ca1083351477169d9a3a3c5e52aff8e7c6",
+          "size": 631511
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "305b206193a25f7bf73effd7d5631a7d825bd2a0",
+          "size": 23400
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "125fba594006d509b34639a3af20ab3a26a583e9",
+          "size": 5265
+        },
+        {
+          "path": "prior_data_320.bin",
+          "mode": "100644",
+          "sha": "4d8aab972a776022267be3ee847867c96eefefe1",
+          "size": 67200
+        },
+        {
+          "path": "prior_data_640.bin",
+          "mode": "100644",
+          "sha": "d60d89eb704169dc3e830ca1c648618a9d6c0c1f",
+          "size": 268800
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        }
+      ]
+    },
+    {
+      "id": "person-det",
+      "name_cn": "人体检测",
+      "name_en": "Person Det",
+      "category": "ai-vision",
+      "summary_cn": "实时人体目标检测",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/person-det",
+      "tree_sha": "9a8a04c294f8287305f205eb5ad97534ca15816d",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "3550257e7ce5417a1c7cc628734bb6f5c1e4800d",
+          "size": 140
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "c9b1d60a80feb934c9eb6b2203e476dac0a515d4",
+          "size": 202181
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "afeff1cb63ea9b2ac036709276c5ebf1b3dde417",
+          "size": 25750
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "4b68259a1442706ee704edc39b5e6ef7467299c0",
+          "size": 3951
+        },
+        {
+          "path": "person_detect_yolov5n.kmodel",
+          "mode": "100644",
+          "sha": "60fec5f16c3652a36f9385f1932d0c2296809d08",
+          "size": 2375584
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        }
+      ]
+    },
+    {
+      "id": "person-keypoint",
+      "name_cn": "人体关键点",
+      "name_en": "Person Keypoint",
+      "category": "ai-vision",
+      "summary_cn": "人体姿态关键点检测",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/person-keypoint",
+      "tree_sha": "ebb4a07c9f03a81d75e55676b08c9d52819b4f16",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "42b53060b36d4530feca6df291793827175d67d4",
+          "size": 149
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "95e9e7827506f7f81e89f26c6d4ce34432038411",
+          "size": 282185
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "f0db91d5f6eebfcf781c1c3c94f079fe088eb601",
+          "size": 26563
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "d68cf8349e42e0f4c8d22e672aa0cde3f623a7d0",
+          "size": 4787
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        },
+        {
+          "path": "yolov8n-pose.kmodel",
+          "mode": "100644",
+          "sha": "0d13bd6e98c4189228b50a4d83e86fdedaf87930",
+          "size": 3677272
+        }
+      ]
+    },
+    {
+      "id": "yolo11-cls",
+      "name_cn": "YOLO11分类",
+      "name_en": "YOLO11 CLS",
+      "category": "ai-vision",
+      "summary_cn": "YOLO11 图像分类示例",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/yolo11-cls",
+      "tree_sha": "cca662be53ba7960d3f5a685a200415478777794",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "582074497e3b20ec5522e1da0cae503cad181ebb",
+          "size": 140
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "629bc7ace32a5408e0a01d317bf4ff91c87c3d82",
+          "size": 20340
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "42b85b65ac6080b3bed117a0e61782fb6261cfc0",
+          "size": 15539
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "873b65f46bc74e4769c7fcd504947eb64fcebcc1",
+          "size": 15565
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "c3fb333b88b62433d3c62efc8b2585a4cb7c0307",
+          "size": 15
+        },
+        {
+          "path": "yolo11n-cls-224.kmodel",
+          "mode": "100644",
+          "sha": "5cece19feaf78f7017cc62b840bc120b063bd8cc",
+          "size": 3060312
+        }
+      ]
+    },
+    {
+      "id": "yolo11-det",
+      "name_cn": "YOLO11检测",
+      "name_en": "YOLO11 DET",
+      "category": "ai-vision",
+      "summary_cn": "YOLO11 通用目标检测",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/ai-vision/yolo11-det",
+      "tree_sha": "14606748dce25ad0d309afd32830d8b339efd5d1",
+      "files": [
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "6382044495b8a2c1b014d764563df758c4c58deb",
+          "size": 140
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "f93599aaf70fc06d84d22c72e372783e6630f9d2",
+          "size": 425139
+        },
+        {
+          "path": "icon_100.png",
+          "mode": "100644",
+          "sha": "8175851214d87f037afd1059e80bbe82a2c9fbaa",
+          "size": 24587
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "b699e954c15e3834f8d1ea45dcf88effd62a3d32",
+          "size": 5023
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "size": 14
+        },
+        {
+          "path": "yolo11n.kmodel",
+          "mode": "100644",
+          "sha": "bb29261ff81da2a0e66773452446a39bdb337de2",
+          "size": 5712864
+        }
+      ]
+    },
+    {
+      "id": "bt-showcase",
+      "name_cn": "蓝牙展示",
+      "name_en": "BT Showcase",
+      "category": "tool",
+      "summary_cn": "蓝牙扫描、状态与测距展示",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/tool/bt-showcase",
+      "tree_sha": "eab16f5521911ac336d9eb17856bdc932e1f37e5",
+      "files": [
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "sha": "0abc4e306c4e38e97404d7158e871643359ed446",
+          "size": 2699
+        },
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "adf8efaa08afd0d54316c7d47df5a7700eb9bc81",
+          "size": 54
+        },
+        {
+          "path": "btctl.py",
+          "mode": "100644",
+          "sha": "bd46664adad93c4ec2095f18a290ccb4333a5f00",
+          "size": 1283
+        },
+        {
+          "path": "core.py",
+          "mode": "100644",
+          "sha": "204f5988dd4bea9bdd17851724eb46d0fb151f2d",
+          "size": 2334
+        },
+        {
+          "path": "demo-modes.gif",
+          "mode": "100644",
+          "sha": "c46b21120edd7df9f65096a28c229339a3fd4aee",
+          "size": 33163
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "29fc8b8146195bf18c749ac8107d02986edfad76",
+          "size": 11588
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "63822294bf0779d1114d4b8d045a8dfbe78cf27e",
+          "size": 14579
+        },
+        {
+          "path": "mode-adapter.png",
+          "mode": "100644",
+          "sha": "8abd88416ac42e400af41e5eb3500a868fc16cfd",
+          "size": 81939
+        },
+        {
+          "path": "mode-range.png",
+          "mode": "100644",
+          "sha": "c57a73f076a698db80dd47971549a42eb8e6d2f8",
+          "size": 26410
+        },
+        {
+          "path": "mode-scan.png",
+          "mode": "100644",
+          "sha": "71fd106f1b7bb7a2ca42405908cf2a891fe340c4",
+          "size": 113522
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "c3fb333b88b62433d3c62efc8b2585a4cb7c0307",
+          "size": 15
+        }
+      ]
+    },
+    {
+      "id": "imu-attitude",
+      "name_cn": "IMU姿态仪",
+      "name_en": "IMU Attitude",
+      "category": "tool",
+      "summary_cn": "六轴姿态、水平仪与波形",
+      "version": "rolling",
+      "source": "official-github",
+      "path": "app/tool/imu-attitude",
+      "tree_sha": "4de025aecb246fd88d004da866196b58aee27395",
+      "files": [
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "sha": "d890b638cb106a31dc67f97dcf0c619ba285768b",
+          "size": 2110
+        },
+        {
+          "path": "app.txt",
+          "mode": "100644",
+          "sha": "73ad0ef3d68b51c4e630dee845842a3316af0bcb",
+          "size": 144
+        },
+        {
+          "path": "demo-cube.gif",
+          "mode": "100644",
+          "sha": "7a79df29e31b6ffd287a16d91914e873590ff2bd",
+          "size": 580149
+        },
+        {
+          "path": "icon.png",
+          "mode": "100644",
+          "sha": "3ffdd9adef57c8204b42179ba570b1e0fa225762",
+          "size": 25738
+        },
+        {
+          "path": "main.py",
+          "mode": "100644",
+          "sha": "a372690f81edd75aa2485397e0a6e2b1760da1c2",
+          "size": 15186
+        },
+        {
+          "path": "mode-cube.png",
+          "mode": "100644",
+          "sha": "12893b154416622a195ae5cba87b956f328ef113",
+          "size": 58243
+        },
+        {
+          "path": "mode-level.png",
+          "mode": "100644",
+          "sha": "4200b87981b6e91e77c9a901025330fe93ee4537",
+          "size": 55893
+        },
+        {
+          "path": "mode-scope.png",
+          "mode": "100644",
+          "sha": "34182cc013ec2905e5767015fdd5dae6e0a9cdaa",
+          "size": 43925
+        },
+        {
+          "path": "qmi8658.py",
+          "mode": "100644",
+          "sha": "d792944d119fc66a3e5eedb05b05e477ff94106d",
+          "size": 4324
+        },
+        {
+          "path": "run.sh",
+          "mode": "100644",
+          "sha": "c3fb333b88b62433d3c62efc8b2585a4cb7c0307",
+          "size": 15
+        }
+      ]
+    }
+  ]
+}

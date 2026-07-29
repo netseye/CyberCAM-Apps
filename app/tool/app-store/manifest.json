@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "app-store",
+  "version": "0.1.0",
+  "arch": [
+    "riscv64"
+  ],
+  "min_os": "1.0.0",
+  "persistent_files": []
+}

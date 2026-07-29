@@ -1,0 +1,30 @@
+name: App Store checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run app-store tests
+        run: python -m unittest discover -s app/tool/app-store/tests -v
+      - name: Verify official catalog file manifests
+        run: |
+          python app/tool/app-store/build_catalog.py
+          git diff --exit-code -- app/tool/app-store/catalog.json
+      - name: Validate JSON documents
+        run: |
+          python -m json.tool app/tool/app-store/catalog.json >/dev/null
+          python -m json.tool app/tool/app-store/sources.json >/dev/null
+          python -m json.tool app/tool/app-store/manifest.json >/dev/null

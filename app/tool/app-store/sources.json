@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "catalogs": [
+    {
+      "name": "01Studio 官方",
+      "url": "https://raw.githubusercontent.com/01studio-lab/CyberCAM-Apps/main/app/tool/app-store/catalog.json",
+      "trusted": true,
+      "enabled": true,
+      "fallback": "catalog.json"
+    }
+  ]
+}

@@ -79,6 +79,7 @@ APP目录位于CyberCAM系统文件系统的`/data/app`路径下。
 ### 工具（tool）
 系统调试、传感器展示、实用小工具。
 
+- 应用商店: [app-store](./app/tool/app-store/)
 - IMU姿态仪: [imu-attitude](./app/tool/imu-attitude/)
 - 蓝牙展示: [bt-showcase](./app/tool/bt-showcase/)
 
