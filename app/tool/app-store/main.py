@@ -16,7 +16,7 @@ import numpy as np
 from walnutpi import Display, direction
 
 from installer import StoreService
-from store_core import human_size, map_touch_coordinates
+from store_core import OperationCancelled, human_size, map_touch_coordinates
 
 
 SCREEN_W, SCREEN_H = 640, 480
@@ -57,6 +57,8 @@ STATUS = {
     "available": ("可安装", COLORS["blue"]),
     "installed": ("已安装", COLORS["green"]),
     "update": ("可更新", COLORS["amber"]),
+    "newer": ("本地较新", COLORS["amber"]),
+    "repair": ("需修复", COLORS["red"]),
     "unmanaged": ("已存在", COLORS["amber"]),
     "error": ("源错误", COLORS["red"]),
 }
@@ -264,6 +266,7 @@ class StoreController:
         self.error = ""
         self.progress_done = 0
         self.progress_total = 0
+        self.cancel_event = threading.Event()
         self.refresh_async()
 
     def snapshot(self):
@@ -287,10 +290,15 @@ class StoreController:
             self.error = ""
             self.progress_done = 0
             self.progress_total = 0
+            self.cancel_event.clear()
 
         def run():
             try:
                 worker()
+            except OperationCancelled:
+                with self.lock:
+                    self.error = ""
+                    self.message = "操作已取消，原应用未变更"
             except Exception as exc:
                 print("[store]", kind, "失败：", exc)
                 with self.lock:
@@ -300,6 +308,7 @@ class StoreController:
                 with self.lock:
                     self.busy = False
                     self.busy_kind = ""
+                    self.cancel_event.clear()
 
         threading.Thread(target=run, name="app-store-" + kind, daemon=True).start()
         return True
@@ -319,6 +328,8 @@ class StoreController:
         app_id = app["id"]
 
         def progress(done, total, message):
+            if self.cancel_event.is_set():
+                raise OperationCancelled("操作已取消")
             with self.lock:
                 self.progress_done = done
                 self.progress_total = total
@@ -331,6 +342,14 @@ class StoreController:
                 self.message = "%s 已安装，桌面将自动显示" % app["name_cn"]
 
         return self._start("install:" + app_id, work)
+
+    def request_cancel(self):
+        with self.lock:
+            if not self.busy or not self.busy_kind.startswith("install:"):
+                return False
+            self.cancel_event.set()
+            self.message = "正在取消下载…"
+            return True
 
     def uninstall_async(self, app):
         app_id = app["id"]
@@ -350,6 +369,8 @@ def action_label(app, confirming=False):
     return {
         "available": "安装",
         "update": "更新",
+        "newer": "降级",
+        "repair": "修复",
         "installed": "卸载",
         "unmanaged": "重新安装",
         "error": "暂不可用",
@@ -381,12 +402,29 @@ def compose(state, selected, page, confirm_id, confirm_until, now):
             cv2.rectangle(image, (14, y1 + 12), (19, y2 - 12), COLORS["blue"], -1)
         draw_text(image, app["name_cn"], (32, y1 + 8), COLORS["text"], 22)
         category = CATEGORY_NAMES.get(app.get("category"), app.get("category", ""))
-        summary = app.get("summary_cn") or category
+        details = []
+        remote_version = app.get("version")
+        installed_version = app.get("_installed_version")
+        if (
+            remote_version
+            and remote_version != "rolling"
+            and installed_version
+            and installed_version != remote_version
+        ):
+            details.append("v%s → v%s" % (installed_version, remote_version))
+        elif remote_version and remote_version != "rolling":
+            details.append("v" + remote_version)
+        elif installed_version:
+            details.append("v" + installed_version)
+        else:
+            details.append("滚动版")
+        details.append(app.get("summary_cn") or category)
         size = app.get("_download_size") or app.get("size") or 0
         if size:
-            summary = summary + " · " + human_size(size)
+            details.append(human_size(size))
         if not app.get("_trusted", False):
-            summary = summary + " · 第三方源"
+            details.append("第三方源")
+        summary = " · ".join(details)
         draw_text(image, summary[:28], (32, y1 + 37), COLORS["muted"], 15)
         label, status_color = STATUS.get(
             app.get("status"), ("未知", COLORS["faint"])
@@ -413,17 +451,23 @@ def compose(state, selected, page, confirm_id, confirm_until, now):
         and selected_app["id"] == confirm_id
         and now < confirm_until
     )
-    if selected_app is not None and not state["busy"]:
+    cancellable = state["busy"] and state["busy_kind"].startswith("install:")
+    if cancellable:
+        action_color = COLORS["red"]
+    elif selected_app is not None and not state["busy"]:
         if confirming or selected_app.get("status") == "error":
             action_color = COLORS["red"]
         else:
             action_color = COLORS["blue"]
     rounded_rect(image, (156, 378), (484, 438), 14, action_color)
-    label = (
-        action_label(selected_app, confirming)
-        if selected_app is not None
-        else "没有可用应用"
-    )
+    if cancellable:
+        label = "取消下载"
+    else:
+        label = (
+            action_label(selected_app, confirming)
+            if selected_app is not None
+            else "没有可用应用"
+        )
     centered = (156 + 484 - text_width(label, 20)) // 2
     draw_text(image, label, (centered, 396), COLORS["bg"], 20)
 
@@ -471,11 +515,16 @@ def main():
 
     def trigger_action(app, state, now):
         nonlocal confirm_id, confirm_until
-        if state["busy"] or app.get("status") == "error":
+        if state["busy"]:
+            controller.request_cancel()
             return
-        needs_confirmation = app.get("status") in ("installed", "unmanaged") or not app.get(
-            "_trusted", False
-        )
+        if app.get("status") == "error":
+            return
+        needs_confirmation = app.get("status") in (
+            "installed",
+            "unmanaged",
+            "newer",
+        ) or not app.get("_trusted", False)
         if needs_confirmation and not (
             confirm_id == app["id"] and now < confirm_until
         ):
@@ -486,6 +535,8 @@ def main():
                     controller.message = "再次点击确认卸载"
                 elif app["status"] == "unmanaged":
                     controller.message = "再次点击确认覆盖现有目录"
+                elif app["status"] == "newer":
+                    controller.message = "再次点击确认降级到 v%s" % app["version"]
                 else:
                     controller.message = "第三方应用源 · 再次点击确认安装"
             return
@@ -511,8 +562,11 @@ def main():
             point = touch.poll()
             if point is not None:
                 x, y = point
-                if y < 68 and x < 68 and not state["busy"]:
-                    break
+                if y < 68 and x < 68:
+                    if state["busy"] and state["busy_kind"].startswith("install:"):
+                        controller.request_cancel()
+                    else:
+                        break
                 if y < 68 and x > 540:
                     controller.refresh_async()
                 elif 78 <= y < 366:
@@ -542,7 +596,9 @@ def main():
                 and now - key_down_at >= 2.0
                 and not long_fired
             ):
-                if not state["busy"]:
+                if state["busy"] and state["busy_kind"].startswith("install:"):
+                    controller.request_cancel()
+                else:
                     break
                 long_fired = True
             elif not pressed and previous_key and key_down_at is not None:

@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 import unittest
 
 
@@ -10,6 +11,8 @@ if APP_DIR not in sys.path:
 from store_core import (  # noqa: E402
     CatalogError,
     SecurityError,
+    compare_versions,
+    file_digests,
     git_blob_sha,
     map_touch_coordinates,
     normalize_relative_path,
@@ -17,6 +20,7 @@ from store_core import (  # noqa: E402
     select_github_app_files,
     validate_app_id,
     validate_https_url,
+    validate_version,
 )
 
 
@@ -106,6 +110,38 @@ class StoreCoreTests(unittest.TestCase):
             map_touch_coordinates(480, 0, (0, 480), (0, 640), flipped=True),
             (639, 479),
         )
+
+    def test_semver_validation_and_precedence(self):
+        for value in ("1.0.0", "2.4.1-beta.2", "3.0.0+build.7"):
+            self.assertEqual(validate_version(value), value)
+        for value in ("1", "1.0", "01.0.0", "1.0.0-01", "rolling", ""):
+            with self.assertRaises(CatalogError):
+                validate_version(value)
+        ordered = [
+            "1.0.0-alpha",
+            "1.0.0-alpha.1",
+            "1.0.0-beta",
+            "1.0.0-beta.2",
+            "1.0.0",
+            "1.1.0",
+            "2.0.0",
+        ]
+        for lower, higher in zip(ordered, ordered[1:]):
+            self.assertLess(compare_versions(lower, higher), 0)
+            self.assertGreater(compare_versions(higher, lower), 0)
+        self.assertEqual(compare_versions("1.0.0+one", "1.0.0+two"), 0)
+
+    def test_file_digests_are_streamed_and_size_checked(self):
+        data = (b"CyberCAM" * 100_000) + b"!"
+        with tempfile.TemporaryDirectory() as root:
+            path = os.path.join(root, "model.bin")
+            with open(path, "wb") as handle:
+                handle.write(data)
+            git_sha, sha256 = file_digests(path, len(data))
+            self.assertEqual(git_sha, git_blob_sha(data))
+            self.assertEqual(len(sha256), 64)
+            with self.assertRaises(SecurityError):
+                file_digests(path, len(data) + 1)
 
 
 if __name__ == "__main__":

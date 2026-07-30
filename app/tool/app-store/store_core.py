@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shlex
 from pathlib import PurePosixPath
@@ -17,6 +18,11 @@ from urllib.parse import urlsplit
 APP_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+SEMVER_RE = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
+    r"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+)
 
 
 class StoreError(Exception):
@@ -31,6 +37,10 @@ class SecurityError(StoreError):
     """Downloaded data failed a security validation."""
 
 
+class OperationCancelled(StoreError):
+    """The user cancelled an in-progress operation."""
+
+
 def validate_app_id(value: str) -> str:
     value = str(value or "")
     if not APP_ID_RE.fullmatch(value):
@@ -43,6 +53,60 @@ def validate_sha256(value: str) -> str:
     if not SHA256_RE.fullmatch(value):
         raise CatalogError("缺少有效的 SHA-256")
     return value
+
+
+def validate_version(value: str) -> str:
+    value = str(value or "")
+    match = SEMVER_RE.fullmatch(value)
+    if not match:
+        raise CatalogError("无效的版本号：%s" % value)
+    prerelease = match.group(4)
+    if prerelease:
+        for identifier in prerelease.split("."):
+            if (
+                identifier.isdigit()
+                and len(identifier) > 1
+                and identifier.startswith("0")
+            ):
+                raise CatalogError("预发布版本数字不能有前导零：%s" % value)
+    return value
+
+
+def _semver_key(value: str) -> tuple:
+    match = SEMVER_RE.fullmatch(validate_version(value))
+    assert match is not None
+    core = tuple(int(match.group(index)) for index in (1, 2, 3))
+    prerelease = match.group(4)
+    if prerelease is None:
+        return core, None
+    identifiers = []
+    for identifier in prerelease.split("."):
+        identifiers.append(
+            (0, int(identifier)) if identifier.isdigit() else (1, identifier)
+        )
+    return core, tuple(identifiers)
+
+
+def compare_versions(left: str, right: str) -> int:
+    """Compare two SemVer values, ignoring build metadata."""
+
+    left_core, left_pre = _semver_key(left)
+    right_core, right_pre = _semver_key(right)
+    if left_core != right_core:
+        return -1 if left_core < right_core else 1
+    if left_pre is None or right_pre is None:
+        if left_pre is right_pre:
+            return 0
+        return 1 if left_pre is None else -1
+    for left_item, right_item in zip(left_pre, right_pre):
+        if left_item == right_item:
+            continue
+        if left_item[0] != right_item[0]:
+            return -1 if left_item[0] < right_item[0] else 1
+        return -1 if left_item[1] < right_item[1] else 1
+    if len(left_pre) == len(right_pre):
+        return 0
+    return -1 if len(left_pre) < len(right_pre) else 1
 
 
 def validate_https_url(value: str) -> str:
@@ -105,6 +169,8 @@ def parse_app_txt(text: str) -> dict[str, str]:
         int(result["index"])
     except ValueError:
         raise CatalogError("app.txt 的 index 必须是整数")
+    if result.get("version"):
+        result["version"] = validate_version(result["version"])
     return result
 
 
@@ -121,6 +187,25 @@ def load_json_bytes(data: bytes, label: str = "JSON") -> dict:
 def git_blob_sha(data: bytes) -> str:
     header = ("blob %d\0" % len(data)).encode("ascii")
     return hashlib.sha1(header + data).hexdigest()  # Git object identifier.
+
+
+def file_digests(path: str, expected_size: int | None = None) -> tuple[str, str]:
+    """Return a Git blob SHA-1 and SHA-256 without loading the file into memory."""
+
+    size = os.path.getsize(path)
+    if expected_size is not None and size != expected_size:
+        raise SecurityError("下载文件大小与清单不一致")
+    git_digest = hashlib.sha1()
+    git_digest.update(("blob %d\0" % size).encode("ascii"))
+    sha256_digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        while True:
+            chunk = handle.read(256 * 1024)
+            if not chunk:
+                break
+            git_digest.update(chunk)
+            sha256_digest.update(chunk)
+    return git_digest.hexdigest(), sha256_digest.hexdigest()
 
 
 def select_github_app_files(entries: list[dict], prefix: str) -> tuple[str, list[dict]]:
@@ -157,6 +242,11 @@ def select_github_app_files(entries: list[dict], prefix: str) -> tuple[str, list
                 "sha": sha,
                 "size": size,
                 "mode": mode,
+                **(
+                    {"sha256": validate_sha256(entry.get("sha256"))}
+                    if entry.get("sha256")
+                    else {}
+                ),
             }
         )
     if not directory_sha or not GIT_SHA_RE.fullmatch(directory_sha.lower()):

@@ -33,297 +33,347 @@
           "path": ".gitignore",
           "mode": "100644",
           "sha": "995b47e3df7f87fb02196828c2c29ab9d5077743",
+          "sha256": "28030b72591dc434c6d5f2fb7e352e7053b857c21befffc2aee3f0ba2bf1c175",
           "size": 62
         },
         {
           "path": "README.md",
           "mode": "100644",
           "sha": "6e18aebbcb5d787854f74f7322ee6b1f2ceabf54",
+          "sha256": "6160f8a3b836bef644611cb99a6bcd6a8386fbb0a875210c93d627cf57e02107",
           "size": 4776
         },
         {
           "path": "WAKE_WORD.md",
           "mode": "100644",
           "sha": "d89226ea351cf6c8a166d52c78724c94a38d16f2",
+          "sha256": "870aaaadd5e0ba866e69af656dcc1f2a7c888fee97dee98f3792ff5cf7791a7e",
           "size": 6609
         },
         {
           "path": "activation.py",
           "mode": "100644",
           "sha": "b3aef326d586c630020d3bb5499bf308a7c9fbd5",
+          "sha256": "4923e27c1055a818557642369bb72ef97e69d11f26f43bcac066298a471b239b",
           "size": 8235
         },
         {
           "path": "app.txt",
           "mode": "100644",
           "sha": "a2ca4ae8ddb4f0e088ed75e9579af8defc1ab9f6",
+          "sha256": "b436eee17c47eb0a1b16cfaefdcc188d9c7195973f139129c8928e8a53824b1f",
           "size": 90
         },
         {
           "path": "assets/demo.gif",
           "mode": "100644",
           "sha": "ab0b4e2751f6f8bebf5941fdb769674cad8416c8",
+          "sha256": "acb559f9f043e46b2e572ebda9817e114d88356e295316b38cc04dd8b3b4d340",
           "size": 489229
         },
         {
           "path": "assets/screen-idle.png",
           "mode": "100644",
           "sha": "95a54fcb794b6b9b532e452b7a1ab85c3f927b0b",
+          "sha256": "278fe874dd07e1c28f45fcd908f83fda2827b2558fae84d1604115157be79a0e",
           "size": 48930
         },
         {
           "path": "assets/screen-listening.png",
           "mode": "100644",
           "sha": "b7c25d49625eb59c3da5d5274f658c189b4f7105",
+          "sha256": "c75c40322e9e61ac4b7f4211ceb4b0fe553b33801fdcbaa5a791021518ae8fe4",
           "size": 42973
         },
         {
           "path": "assets/screen-speaking.png",
           "mode": "100644",
           "sha": "ed7d2ed6c7ecd9afae98d2dfd4e281081c6e6659",
+          "sha256": "6caf3543077361705a5f99e00be43788f212359b5c72cb39f7d8a75e14fc3657",
           "size": 50175
         },
         {
           "path": "assistant.py",
           "mode": "100644",
           "sha": "635a510f312b8e3cae74187f3ae3164635fb51b6",
+          "sha256": "35f718701941fcab43fdaf0f808916482c27d4d9404b9981bfe147bf111ae87b",
           "size": 29667
         },
         {
           "path": "audio.py",
           "mode": "100644",
           "sha": "7c1787ac90c0742aa133bee9bcb5466502cc2a59",
+          "sha256": "5ef38e5da24ed8f03e797155e17ebf4b77e39f0c89811410e747836ef44206c5",
           "size": 6914
         },
         {
           "path": "config.example.json",
           "mode": "100644",
           "sha": "6dcc69c1c7419a494558c52e92b80ad5fad65c9d",
+          "sha256": "a5de634519722a9e26279ded149924fdaeb9d598650908b871d3ebeb6d64f148",
           "size": 486
         },
         {
           "path": "deploy.sh",
           "mode": "100644",
           "sha": "f811d1413e3c36983ddd887be11ebc7f68a2642f",
+          "sha256": "1df790171b40eee030e73a40a2e5e91ec94b8fd7694d362525f9a54865dcbf35",
           "size": 2287
         },
         {
           "path": "devices.py",
           "mode": "100644",
           "sha": "f9c131f8daa45ad47d255b9d92f7f1c5cbe50f00",
+          "sha256": "640a7a603ecd5727972cb54d2a7e9442afd79cc816f5af893ed08336da989e3b",
           "size": 12858
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "3580fb9c6e42048d6fc60fe2a9f2d70daa97bdc1",
+          "sha256": "fc07c7f59a873ce8cd4d8d5c30853256aec711bfc115f06910b1b902892ebd11",
           "size": 70010
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "23a9812a1c2a14884d9054f52d8ab3e59788ec70",
+          "sha256": "d3c0cb768dca790886f54619e126d35203570ec93f1dcf13a155b5460e6aabbf",
           "size": 13451
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "674d29e303cc9b0f8ac3c7fe413376857a032f64",
+          "sha256": "45dce10092605cdb0a91a8412eeabfaa4b077a04db0cf563b44ef8b7c1bb227c",
           "size": 17423
         },
         {
           "path": "mcp.py",
           "mode": "100644",
           "sha": "011a5cae6328c50dec0d23cc17c542595d26254e",
+          "sha256": "22a1027b3e6fec898d052d12ef86b1ed360d4e6da0b7ed6c17fadc4689eecf19",
           "size": 11031
         },
         {
           "path": "protocol.py",
           "mode": "100644",
           "sha": "f726f6a4b59b1aa42faa5164a28a594f53e0af51",
+          "sha256": "0462fd30cb82aa1c3085235e3f5c8a1169c72658530a01a57945dc6e2c6d8791",
           "size": 6062
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "506b618f5227c5a11a56418c4d9db788c372d3a1",
+          "sha256": "8326612afb64fccc4f8871a4e2ef5d9f2b7cf83897b201d7e1a613470891c2d7",
           "size": 1076
         },
         {
           "path": "tests/test_activation.py",
           "mode": "100644",
           "sha": "005596cb5efd9931c073d1aa5cca76de0549bb9c",
+          "sha256": "7a2daae3dd7d891b17fafe379fba4387cad3817a2f8ca4894ca3b949581f5210",
           "size": 3927
         },
         {
           "path": "tests/test_assistant.py",
           "mode": "100644",
           "sha": "f9ae97440ad17ff24b72bb9aaa51b2ea9f443524",
+          "sha256": "51a81b92daa2b120e6cafa6ead6c30ba8b5f5cb6d7348581933806e81cf71818",
           "size": 12297
         },
         {
           "path": "tests/test_audio.py",
           "mode": "100644",
           "sha": "cda4eb7b8eeaa1524610f2b9c3cd6cda68484812",
+          "sha256": "bc261afbc558ecb01ae7553064303d625a841bc1498bae2e456d6cd3f4ef4405",
           "size": 1860
         },
         {
           "path": "tests/test_devices.py",
           "mode": "100644",
           "sha": "7dae87c4610d9d08a46a5e99cac536f67039946a",
+          "sha256": "b4b0b2562c37ee0b939a2d593286a09b0ffdeed9b1adc1e4e4d07472e71ec9af",
           "size": 4556
         },
         {
           "path": "tests/test_mcp.py",
           "mode": "100644",
           "sha": "d8ef1611be8f95fac0e35f5025f92003535014c2",
+          "sha256": "e9e6ee09d293a2e420c29fb57450221d853a183cf215fe0243d3d124251d564b",
           "size": 5818
         },
         {
           "path": "tests/test_protocol.py",
           "mode": "100644",
           "sha": "458f11b9b53b192ef83e1a7b4bf902223e2e7737",
+          "sha256": "7a94edb284264e5659b5d2b5175003a2f80c97882ea010132aee36f325b1afe0",
           "size": 5385
         },
         {
           "path": "tests/test_transport.py",
           "mode": "100644",
           "sha": "3d3df7c5cdb5b5ad80de3c71f36a40530f7e0de5",
+          "sha256": "4be62635ccdd4d4c28043c1bd70d2a9d862a3cafd349729f0520077e9a6ba8b0",
           "size": 7662
         },
         {
           "path": "tests/test_wakeword.py",
           "mode": "100644",
           "sha": "3ce86eb6ffd0a9c6bf18b6ab0080cc679acef037",
+          "sha256": "dd6ff02704949ab4f0cd2ea2b343bcd69b180b394fde5035c31a25130aa50408",
           "size": 7919
         },
         {
           "path": "transport.py",
           "mode": "100644",
           "sha": "46774ad92f1bc97e42b90c17d3a359adfa05ae5c",
+          "sha256": "d401a7d1ace3571608cf2ca31d7b7695cd387b9a4b2473c38f200b89d07bf9d7",
           "size": 10959
         },
         {
           "path": "wake/APACHE-2.0.txt",
           "mode": "100644",
           "sha": "7a4a3ea2424c09fbe48d455aed1eaa94d9124835",
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
           "size": 11357
         },
         {
           "path": "wake/ONNXRUNTIME-MIT.txt",
           "mode": "100644",
           "sha": "48bc6bb4996ac924359e8e28b9ae88970e5ed3fc",
+          "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
           "size": 1073
         },
         {
           "path": "wake/ONNXRUNTIME-THIRD-PARTY-NOTICES.txt",
           "mode": "100644",
           "sha": "fbd9f9a95f6013d8ecaef81e02b0033e5882a675",
+          "sha256": "0e07b95f3a8d6230037707c5c4a2b554d12c4cb67369669ac255635528ffcee2",
           "size": 325054
         },
         {
           "path": "wake/README.md",
           "mode": "100644",
           "sha": "45708fc6987a75897d6fe5640c6883fee4408dad",
+          "sha256": "07bec4a8b2190d4449bcb5447a5973f023b27075f7cda2a41e7f2a9609457538",
           "size": 1617
         },
         {
           "path": "wake/THIRD_PARTY_NOTICES.md",
           "mode": "100644",
           "sha": "8c657ab12f89e5b6f1f0254e85fd2ef16b12f6a3",
+          "sha256": "c3145ef1661d32adbc1e114ca93436bc77d314790eb5104862432146ae275539",
           "size": 1221
         },
         {
           "path": "wake/keywords.txt",
           "mode": "100644",
           "sha": "46f0eac1d0d60ebda3d57586b59d38100bdb4ed0",
+          "sha256": "44d9e911e122c23f493715782d3c60b46ae6143e851d1805d36c0c87197959d2",
           "size": 100
         },
         {
           "path": "wake/manifest.sha256",
           "mode": "100644",
           "sha": "05ce048b94a3a4b0cf05f2d5ed5f347d363ff448",
+          "sha256": "5c7789b0b3eb3d26423e737d90f52ee6f5000a3805c95e4028cf56e9fa6ebd36",
           "size": 1238
         },
         {
           "path": "wake/model/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
           "mode": "100644",
           "sha": "bef15fd6092cc5e65974e9c077831dca448adf32",
+          "sha256": "ed83454004d5bd16d831eaf00adcd181ed7734886aab6ef440f3ffa5aa3cfe3b",
           "size": 181069
         },
         {
           "path": "wake/model/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
           "mode": "100644",
           "sha": "a739d3a7dd3d10a3cbcf4ed5ad407388fbc09f4c",
+          "sha256": "dd784973fc9d2fabb3b800d6dcd20fc3b0ca84f8e2415afe54b032878e447f4d",
           "size": 4777666
         },
         {
           "path": "wake/model/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
           "mode": "100644",
           "sha": "fc88aba6dd069c5d5fb829179b2620d9f5944c5c",
+          "sha256": "f79760052b87239e325f0567c752ad3130b30d92effb847d4307743c20c59a24",
           "size": 65242
         },
         {
           "path": "wake/model/tokens.txt",
           "mode": "100644",
           "sha": "5880fbff8f302e941ccf042d81bdbcf35325dc42",
+          "sha256": "72316508d9119696145abc6f1f8cdc46287535c34e5ce7e595f845cb1499cf2e",
           "size": 1627
         },
         {
           "path": "wake/native/wakeword-daemon",
           "mode": "100644",
           "sha": "2a55598fb0dbcccdd1e72e26b82176373c86630c",
+          "sha256": "5477fd1fb75927a07412bca4ead7ab17e1c26042a4f1ce883826df16b4626b83",
           "size": 32592
         },
         {
           "path": "wake/native/wakeword_daemon.cpp",
           "mode": "100644",
           "sha": "c4d22d5031efce3144cdd0f0121d0883e3ba4da7",
+          "sha256": "4030bfb0ac2521649b44d6ac0f238e6c76bb072605f9b0ee3b3e1c9f981e6860",
           "size": 12510
         },
         {
           "path": "wake/parent_guard.py",
           "mode": "100644",
           "sha": "0e0b028d470f9fdb1c86fd8163287742c692fab6",
+          "sha256": "fd962f0327bf5c4cb04a05c453b1c3dc549e57a3448137ab2715cfdee11a9f66",
           "size": 859
         },
         {
           "path": "wake/runtime-spacemit/bin/sherpa-onnx-keyword-spotter-alsa",
           "mode": "100644",
           "sha": "8d30542da9692f3c49b02db597585a4c64f2af0b",
+          "sha256": "139e1d5d8083b226bd9eacceb8092a421350729ccbfebaea95ddeca418830dd6",
           "size": 410440
         },
         {
           "path": "wake/runtime-spacemit/lib/libonnxruntime.so.1",
           "mode": "100644",
           "sha": "10d4645e2fb988b48fa3135b3546f987cc37d8d0",
+          "sha256": "e4abc60c53b1bcf0e3cde31b284d67c242ba3db8a2dbac3b10f0d817828fc289",
           "size": 20367528
         },
         {
           "path": "wake/runtime-spacemit/lib/libonnxruntime_providers_shared.so",
           "mode": "100644",
           "sha": "6995c89744e501d1eb5214c61a3d88c86cbb72e7",
+          "sha256": "62a3d2d9916c20bbe08358e5797c3e8c7ff11c6235728ac396d1d1f315d598de",
           "size": 6048
         },
         {
           "path": "wake/runtime-spacemit/lib/libsherpa-onnx-c-api.so",
           "mode": "100644",
           "sha": "f3c9e346e71be572973c94e85de82dd772687e4b",
+          "sha256": "7cf109bb4d6fce4435a4fc8567a29cbeb89544bed87f39be810638d5d81d60d9",
           "size": 3140208
         },
         {
           "path": "wake/runtime-spacemit/lib/libspacemit_ep.so.2",
           "mode": "100644",
           "sha": "04e692adc81335e95df7605287fcad738c9fb836",
+          "sha256": "c7bab0898d458151ffd255f69c0df6029ff17d569133a4106239159d9e077d67",
           "size": 4961408
         },
         {
           "path": "wakeword.py",
           "mode": "100644",
           "sha": "f5e3e34e7e816d1b9678740ea874f2a4c68c2162",
+          "sha256": "fc3c9a0b8de33819696391140fd40e3357e687cce5eb8f9c15bcd0ad98ba80d0",
           "size": 14049
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "face-det",
@@ -340,69 +390,81 @@
           "path": "README.md",
           "mode": "100644",
           "sha": "2e716ecaba530377108a7e915a60200883cfd4f4",
+          "sha256": "4bdf43fc9479820e10cc66e50970bebb9e0d79aeba4f0dbb857e7561362937a7",
           "size": 248
         },
         {
           "path": "app.txt",
           "mode": "100644",
           "sha": "d3e623d3c19b90b67fe745c5c6bad7b37b8a6871",
+          "sha256": "fa40009a1f3ca6941191e89c735a6483752c444c2459aec0b79952ee5240b9b7",
           "size": 166
         },
         {
           "path": "face_detection_320.kmodel",
           "mode": "100644",
           "sha": "b80096eb52e7e5665b9c249675db304e97a5edb5",
+          "sha256": "56d35ded2a717fafcc1a357fd6e634531fa1693e59c77707140d8c6e1693eae9",
           "size": 584576
         },
         {
           "path": "face_detection_640.kmodel",
           "mode": "100644",
           "sha": "509b69cceea3f289c0a39e1816954f77d36acf0e",
+          "sha256": "f624882ec70d818b74ec417c47b546a76f15fdd54c27bfc65323089b68e71d73",
           "size": 716216
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "bae9b32c25aa6cc40afa016cf7def2354cf67721",
+          "sha256": "357ef6ab6faa74ef80b7a619654b7d0bd6f057cf0567becd552cb286b5ff5066",
           "size": 611061
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "434c5cc9e89821a53eab66d9c750a81af6008f1c",
+          "sha256": "d1278201564f79f0eae29e35422621831bc522d5c95d98b36d15f3800da4b1e3",
           "size": 15294
         },
         {
           "path": "intro.png",
           "mode": "100644",
           "sha": "d9168268d752fafe22dbb0e10412ac5d6d27d6d0",
+          "sha256": "17f0bdd80f47f0a7a5f00f9e08e469c5b4d2e3d1d85c2a4ea149d55a48828138",
           "size": 2171445
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "5bb17fc407162e355e77af64aabf55e6403c6d0b",
+          "sha256": "a90a5258a0d94e8c0432cef76348abd47393afb66323663141dfed4de8382ff7",
           "size": 4143
         },
         {
           "path": "prior_data_320.bin",
           "mode": "100644",
           "sha": "4d8aab972a776022267be3ee847867c96eefefe1",
+          "sha256": "b617d85d9b71110f775008e3bf2ecda74b7b850bbf36334e6ae0c22a802f5c42",
           "size": 67200
         },
         {
           "path": "prior_data_640.bin",
           "mode": "100644",
           "sha": "d60d89eb704169dc3e830ca1c648618a9d6c0c1f",
+          "sha256": "0c1bb6961916d6a8352d323ea50b207fa01c7c008367de3a476b4fee4e5809f7",
           "size": 268800
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         }
-      ]
+      ],
+      "revision": "5d4baf329cabf25776a125a20fd1c4d59f90bff6"
     },
     {
       "id": "fall-det",
@@ -419,39 +481,46 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "d8ee4918203f16da2adf3318af4fc73c04135962",
+          "sha256": "2d3174bbdb2001371460b80099fd14d0c65afa7fb02eb2b9e25db8ae93aad970",
           "size": 139
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "491d2ba5292be7e04dd98fa10b08fed28846d1b7",
+          "sha256": "728bb4f666376a3f53c7155ca5475f1052484d2cf1119b440037477926d73aa9",
           "size": 226163
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "92949fd8f195123387819a9ae16f1fe4243bb709",
+          "sha256": "85822eef19de45d0ee28484f6d50c11c8e3c033609a57ac47d45c3577a09190f",
           "size": 28105
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "1b59b5e0d5b9aab750b916f4ad9cbba6fe3704d0",
+          "sha256": "1686c4ce64f73d25b2ea50a159c86dc31aad6c4f54bd8285bfcf279543f00030",
           "size": 4123
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         },
         {
           "path": "yolov5n-falldown.kmodel",
           "mode": "100644",
           "sha": "79555309e82ec571ba570f00a6c05dd41b24dba1",
+          "sha256": "721470b4bc7245e6330f31866761f842e6fba5fc999c7c7bcd8a25b38e8bc19a",
           "size": 2377208
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "hand-det",
@@ -468,39 +537,46 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "dc27f41c08c45a80319ed7d38673152ae19f0827",
+          "sha256": "4c878233a84a7a6ebd7bf93aebb7c288588741c5c0463ed4c9d8ec601e162799",
           "size": 139
         },
         {
           "path": "hand_det.kmodel",
           "mode": "100644",
           "sha": "2fce4489a9e8a5e7a4098c590779edbc8c8226fa",
+          "sha256": "b40f4e25fdfd8f6183bb3edea5e9d2c28fbe9047a8f48019017bc6574dcabd5f",
           "size": 5976808
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "4536b8750516473cfae4e3f6b3d986306efe92ac",
+          "sha256": "fc6e47bef10c7b5583e7fe543bdc83906d69fee835001157a9136680f93a7734",
           "size": 153118
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "7d6155dfbea8522d9ad9e78aa84588406623584e",
+          "sha256": "e283607d56b8b96dfcd32bc370ac66f537270d0eb5259ac4792351d820185365",
           "size": 26430
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "58aae09e397755e2d563942e63f7e1434d145756",
+          "sha256": "03895ff58ba4edff84f432d1341a83570b141784ed3495e85717add70dde9f08",
           "size": 3842
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "hand-keypoint",
@@ -517,45 +593,53 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "926d01623dc968fede03d068935e3352037130f0",
+          "sha256": "3f9da177bce6d4e07f5e17477c74c193c74355dc734b7c6b8cf86d5671c1dfad",
           "size": 153
         },
         {
           "path": "hand_det.kmodel",
           "mode": "100644",
           "sha": "2fce4489a9e8a5e7a4098c590779edbc8c8226fa",
+          "sha256": "b40f4e25fdfd8f6183bb3edea5e9d2c28fbe9047a8f48019017bc6574dcabd5f",
           "size": 5976808
         },
         {
           "path": "handkp_det.kmodel",
           "mode": "100644",
           "sha": "cb8e2ce1d9042a987feea2949d8b2a725ba61918",
+          "sha256": "de6ac6445d9b189bcf2c87fcc994ec8349b7b9784000ca9f731f50a2e3cdc890",
           "size": 26870480
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "c05de469b9d0afcee3784d5797ac26bb585d9083",
+          "sha256": "b0f2c2d874735fcea5dc7f6ba01ef78bdd9b031e68b77a64e4e779666fee7569",
           "size": 63958
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "b8c9c7760e89b79bd3bb01de0209602b37938303",
+          "sha256": "1bc82da1d3776d97ef20b23a08fb8d96be054e35503698ae9a6d402f464ff385",
           "size": 13482
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "d8e4647bb076b0daeed10d5a0590bf06688a16d8",
+          "sha256": "1dba9ff46c1a551142f5b52da10f10c859f74482e1cc9a22ef9c53437b603430",
           "size": 4627
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "hand-keypoint-cls",
@@ -572,45 +656,53 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "448c1b42b50ddef3ce95e341549f110369cab02e",
+          "sha256": "1b3c64d722506b496a921ac7943dc07f8f46167927169704c2de79df796e84c6",
           "size": 148
         },
         {
           "path": "hand_det.kmodel",
           "mode": "100644",
           "sha": "2fce4489a9e8a5e7a4098c590779edbc8c8226fa",
+          "sha256": "b40f4e25fdfd8f6183bb3edea5e9d2c28fbe9047a8f48019017bc6574dcabd5f",
           "size": 5976808
         },
         {
           "path": "handkp_det.kmodel",
           "mode": "100644",
           "sha": "cb8e2ce1d9042a987feea2949d8b2a725ba61918",
+          "sha256": "de6ac6445d9b189bcf2c87fcc994ec8349b7b9784000ca9f731f50a2e3cdc890",
           "size": 26870480
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "2a89d3cacef3a09da81011266de438354bb05dc5",
+          "sha256": "74995ca7cf2cd5bb931ca81f8477bdce7e93bc1f4bfd6262f02c029e98bfd6eb",
           "size": 96359
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "a28ca9c15639bf6820e9498c4583edbd23fcb35a",
+          "sha256": "84b18208a16457aa6c9e62e4ed4b03308c6314b0e4d7650a02356cc64b678e24",
           "size": 18301
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "0a532e52c8d6ac6a7fa31740ef682a6ae4dc0b06",
+          "sha256": "a5c206458c3411eaf78df79921322b8a7a5ddbef8b5638336f05c7999e871338",
           "size": 5209
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "license-recg",
@@ -627,51 +719,60 @@
           "path": "anchors_640.bin",
           "mode": "100644",
           "sha": "ccd87a2ad71b5d5514d5e5db0dcf62e7e4233750",
+          "sha256": "fd31a22a9df863a5bbde44f45277a6a81d24fc96c182f0142223606b0ae78a8d",
           "size": 268800
         },
         {
           "path": "app.txt",
           "mode": "100644",
           "sha": "1b33beacdffa8d31d82dd6dd8f4aa543e01abc47",
+          "sha256": "8b4cebaefb79cb893b422a3e07c95df10ba45b0e485cedc5d925d604eba823a0",
           "size": 143
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "487f932c42c3ee7c6e00914f4eef86c2044b0ff6",
+          "sha256": "6703a2ff2b787ad5b25e1c5d269b085266910c560336e03a7d22c240f768884d",
           "size": 26510
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "afc803ad581179b1351a87f4fe7d51624bec867a",
+          "sha256": "8b3eab19f79f1867c116872c51cbb54dc34f37a52114c4d980e23b91dd5f1268",
           "size": 9349
         },
         {
           "path": "licence_det.kmodel",
           "mode": "100644",
           "sha": "a4d82d55f8198585776c1adfaef604de62e039ae",
+          "sha256": "0ae281cd0ea9e2eb36ce827c574337ed80b281a144a382351871e7e7a5905a02",
           "size": 714632
         },
         {
           "path": "licence_rec.kmodel",
           "mode": "100644",
           "sha": "15be0814ca9324008c94c22a0d84124514868d76",
+          "sha256": "53ddb9217e481dfa3baa82f7f74eec4c17f7d1a29a72d9918e82c2cb6161075c",
           "size": 667976
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "035111a3ea5a0010977fc8e5c5b4ad00339f6421",
+          "sha256": "19dc68b8b24e09666da50f1c367772ce8544b5673719e1def40b1b54f1cb7e08",
           "size": 4762
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "mask-det",
@@ -688,63 +789,74 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "5991cf6593c2c2b51bf697382560d465893a1b60",
+          "sha256": "9094093d3115bcd7fd50ec68bd2d5db90c1aa3b72f3fe45d80f9cf74bc01ba07",
           "size": 139
         },
         {
           "path": "face_detection_320.kmodel",
           "mode": "100644",
           "sha": "b80096eb52e7e5665b9c249675db304e97a5edb5",
+          "sha256": "56d35ded2a717fafcc1a357fd6e634531fa1693e59c77707140d8c6e1693eae9",
           "size": 584576
         },
         {
           "path": "face_detection_640.kmodel",
           "mode": "100644",
           "sha": "509b69cceea3f289c0a39e1816954f77d36acf0e",
+          "sha256": "f624882ec70d818b74ec417c47b546a76f15fdd54c27bfc65323089b68e71d73",
           "size": 716216
         },
         {
           "path": "face_mask.kmodel",
           "mode": "100644",
           "sha": "27a496f6333062a5bfe4a28766fcef15d27a8550",
+          "sha256": "44e3b6f67fd59a5f007e3f530d65dfa647a8f22a24311cb060df5b888476cadb",
           "size": 2632760
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "47eb54ca1083351477169d9a3a3c5e52aff8e7c6",
+          "sha256": "a491defc491d26ff0f9ff7b85ae5f015cee3af92dbd04264c2934a82cde71e97",
           "size": 631511
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "305b206193a25f7bf73effd7d5631a7d825bd2a0",
+          "sha256": "6f8ab9b39e9e8be07bcaa55c88ce83c372ec0d5b0a89bb7b83eff087839f8646",
           "size": 23400
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "125fba594006d509b34639a3af20ab3a26a583e9",
+          "sha256": "8ab2152ff9d9050fe9e0a3906fc439171f3f10f7dd3b09aa7b9b12153bb67153",
           "size": 5265
         },
         {
           "path": "prior_data_320.bin",
           "mode": "100644",
           "sha": "4d8aab972a776022267be3ee847867c96eefefe1",
+          "sha256": "b617d85d9b71110f775008e3bf2ecda74b7b850bbf36334e6ae0c22a802f5c42",
           "size": 67200
         },
         {
           "path": "prior_data_640.bin",
           "mode": "100644",
           "sha": "d60d89eb704169dc3e830ca1c648618a9d6c0c1f",
+          "sha256": "0c1bb6961916d6a8352d323ea50b207fa01c7c008367de3a476b4fee4e5809f7",
           "size": 268800
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "person-det",
@@ -761,39 +873,46 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "3550257e7ce5417a1c7cc628734bb6f5c1e4800d",
+          "sha256": "df054339754c5ac755ef0f7114989012836631aa923961c5aa3e330639d172b8",
           "size": 140
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "c9b1d60a80feb934c9eb6b2203e476dac0a515d4",
+          "sha256": "c746af3e79e9ba9a420b5e3c1f1eb1a66ee65564b5cb9dddd713279fc0acc25b",
           "size": 202181
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "afeff1cb63ea9b2ac036709276c5ebf1b3dde417",
+          "sha256": "979c1574d168b104cff2b38313aaee63d1be910bf1c4b3745a78006632ab5b37",
           "size": 25750
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "4b68259a1442706ee704edc39b5e6ef7467299c0",
+          "sha256": "bba0ae4a26f839045b3d136bf7e2c2f24c3b37ca3bb07455feb23eeca1b5bc69",
           "size": 3951
         },
         {
           "path": "person_detect_yolov5n.kmodel",
           "mode": "100644",
           "sha": "60fec5f16c3652a36f9385f1932d0c2296809d08",
+          "sha256": "512325f2b5924bf4502c8b88006c50fb801a2bc93101148df92b30fbc4c8682a",
           "size": 2375584
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "person-keypoint",
@@ -810,39 +929,46 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "42b53060b36d4530feca6df291793827175d67d4",
+          "sha256": "c40cedd061d1600b1accfb88e225f25de7ff0d939d368cadc8a08a5832900bbf",
           "size": 149
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "95e9e7827506f7f81e89f26c6d4ce34432038411",
+          "sha256": "c47c67a5c05033c10670dceaa6dd4265a5fa39524e4b006da141002c88320ed7",
           "size": 282185
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "f0db91d5f6eebfcf781c1c3c94f079fe088eb601",
+          "sha256": "c927e55235532f36114b5dd6396c13f7ca630ce2967d316274a53dce90f403f2",
           "size": 26563
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "d68cf8349e42e0f4c8d22e672aa0cde3f623a7d0",
+          "sha256": "35f36ae4880fbbc9e28d2dfd0ed1184104d87fcbd0b92adb30e97bcab4d75c4c",
           "size": 4787
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         },
         {
           "path": "yolov8n-pose.kmodel",
           "mode": "100644",
           "sha": "0d13bd6e98c4189228b50a4d83e86fdedaf87930",
+          "sha256": "9be38b6ab51b215f7b57e87221ed5686be61878a78c7ac56afa70891c1621999",
           "size": 3677272
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "yolo11-cls",
@@ -859,39 +985,46 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "582074497e3b20ec5522e1da0cae503cad181ebb",
+          "sha256": "4fe9ed6872f6438bb72dc6eaef37f7ee8324b17180c3654028691af758f33230",
           "size": 140
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "629bc7ace32a5408e0a01d317bf4ff91c87c3d82",
+          "sha256": "0c161ce39683b559e1117312b903c5f3a265be47286351101929b93423ae8633",
           "size": 20340
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "42b85b65ac6080b3bed117a0e61782fb6261cfc0",
+          "sha256": "c687cdf3c2a531210c36bb778200b796e42e02a5510ab48e8662225ba8cc02ca",
           "size": 15539
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "873b65f46bc74e4769c7fcd504947eb64fcebcc1",
+          "sha256": "5831b0dd96b5b8a2708d2826f8d9205ceca2aabeae360ce91ea55a9beb75dca2",
           "size": 15565
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "c3fb333b88b62433d3c62efc8b2585a4cb7c0307",
+          "sha256": "a6228c53b33871b4ad5a33b621f4a3e7e5a864da2f1243e958bdf22f735c24b8",
           "size": 15
         },
         {
           "path": "yolo11n-cls-224.kmodel",
           "mode": "100644",
           "sha": "5cece19feaf78f7017cc62b840bc120b063bd8cc",
+          "sha256": "48910765c8c7feee206869ed11219bd36dba2d1ba779f312b2e731982ed37b35",
           "size": 3060312
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "yolo11-det",
@@ -908,39 +1041,46 @@
           "path": "app.txt",
           "mode": "100644",
           "sha": "6382044495b8a2c1b014d764563df758c4c58deb",
+          "sha256": "793c1b54e2c0ba2174e18b5b1671bc54e0ed67a917907fa8033f7a4bcf84199a",
           "size": 140
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "f93599aaf70fc06d84d22c72e372783e6630f9d2",
+          "sha256": "0f8bb6818b48c378622b688437522e590f9f7526101fa7a79d1debee84376ab9",
           "size": 425139
         },
         {
           "path": "icon_100.png",
           "mode": "100644",
           "sha": "8175851214d87f037afd1059e80bbe82a2c9fbaa",
+          "sha256": "de9b35295ce7cf1483d64583dac418180d5d18ef8f1249635ca5f1622de08c7c",
           "size": 24587
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "b699e954c15e3834f8d1ea45dcf88effd62a3d32",
+          "sha256": "9b1db551aa67990f0581b6c414187d6d31db4ea505d1b319c03af265af748640",
           "size": 5023
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "7a84f979de9940293ba467a8e1c109dc6c70485e",
+          "sha256": "89b15dd343075c7271ec08f848803709a915526e81831af0a9df53577b5155b5",
           "size": 14
         },
         {
           "path": "yolo11n.kmodel",
           "mode": "100644",
           "sha": "bb29261ff81da2a0e66773452446a39bdb337de2",
+          "sha256": "f2f619ed14d6997779d4709b0576c764baa110bdcbad1219f153cd3739edda2f",
           "size": 5712864
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "bt-showcase",
@@ -957,69 +1097,81 @@
           "path": "README.md",
           "mode": "100644",
           "sha": "0abc4e306c4e38e97404d7158e871643359ed446",
+          "sha256": "5a1a6761bb15c3226dff9aa4a6da0002956754bc358d572a1f6c4e57aaa8301f",
           "size": 2699
         },
         {
           "path": "app.txt",
           "mode": "100644",
           "sha": "adf8efaa08afd0d54316c7d47df5a7700eb9bc81",
+          "sha256": "012c42b350b1bfa3db1eb20121d29603a83b66c24dd70b551d098231212af651",
           "size": 54
         },
         {
           "path": "btctl.py",
           "mode": "100644",
           "sha": "bd46664adad93c4ec2095f18a290ccb4333a5f00",
+          "sha256": "31558c37701ad93c8d66a204b97977746844e863eb057c0e7a79630e606e5453",
           "size": 1283
         },
         {
           "path": "core.py",
           "mode": "100644",
           "sha": "204f5988dd4bea9bdd17851724eb46d0fb151f2d",
+          "sha256": "ae8ee85dd573e14f0e92f45cac30c61d38c5089148752020ae2ec40004bcd749",
           "size": 2334
         },
         {
           "path": "demo-modes.gif",
           "mode": "100644",
           "sha": "c46b21120edd7df9f65096a28c229339a3fd4aee",
+          "sha256": "f616fd18f62f3c70376a7cca238ee69ba14e0c21c685903d4f7d16c62e0e009a",
           "size": 33163
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "29fc8b8146195bf18c749ac8107d02986edfad76",
+          "sha256": "1f20f62295cf14b49d3362fead02f865628fbd10a5e6e3d96fa952801e784fb4",
           "size": 11588
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "63822294bf0779d1114d4b8d045a8dfbe78cf27e",
+          "sha256": "6aaff5a25fb6962fbd9e3bbdb3c3a7303829fa8157ee9975a3cbec6f597dccfa",
           "size": 14579
         },
         {
           "path": "mode-adapter.png",
           "mode": "100644",
           "sha": "8abd88416ac42e400af41e5eb3500a868fc16cfd",
+          "sha256": "db8e5194cbb6fd1df5e7e9ecf54aacc826b7409e74d2d768bef36b42f26e763b",
           "size": 81939
         },
         {
           "path": "mode-range.png",
           "mode": "100644",
           "sha": "c57a73f076a698db80dd47971549a42eb8e6d2f8",
+          "sha256": "5cef96a839fdccb3b395991435b8ca53798692656390ba818d87347f1bfcbb51",
           "size": 26410
         },
         {
           "path": "mode-scan.png",
           "mode": "100644",
           "sha": "71fd106f1b7bb7a2ca42405908cf2a891fe340c4",
+          "sha256": "0fff3dc628a28978924f6a2dfc7962ee2c0663f54c53ad8faa8c87cd1c3f4267",
           "size": 113522
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "c3fb333b88b62433d3c62efc8b2585a4cb7c0307",
+          "sha256": "a6228c53b33871b4ad5a33b621f4a3e7e5a864da2f1243e958bdf22f735c24b8",
           "size": 15
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     },
     {
       "id": "imu-attitude",
@@ -1036,63 +1188,74 @@
           "path": "README.md",
           "mode": "100644",
           "sha": "d890b638cb106a31dc67f97dcf0c619ba285768b",
+          "sha256": "08472e940bf971204efc16a666468d726832951f641b9ba7bdffe62955fd9c59",
           "size": 2110
         },
         {
           "path": "app.txt",
           "mode": "100644",
           "sha": "73ad0ef3d68b51c4e630dee845842a3316af0bcb",
+          "sha256": "8b648d6389538a3df8636d8bc3cccfee02a76ea86f51c28e7ceedc77381f5cf8",
           "size": 144
         },
         {
           "path": "demo-cube.gif",
           "mode": "100644",
           "sha": "7a79df29e31b6ffd287a16d91914e873590ff2bd",
+          "sha256": "3d500d309ad170178d9df65aa00e5c55996ea475e0565ec6dce7e872637231c7",
           "size": 580149
         },
         {
           "path": "icon.png",
           "mode": "100644",
           "sha": "3ffdd9adef57c8204b42179ba570b1e0fa225762",
+          "sha256": "159e794deac62f9d1716f5765e8f07f4519ad6068f42dbba5ca1c8ae791427ad",
           "size": 25738
         },
         {
           "path": "main.py",
           "mode": "100644",
           "sha": "a372690f81edd75aa2485397e0a6e2b1760da1c2",
+          "sha256": "fe004adf73b587f67a915d5ebcc9f5cad6b3eb1366a72801c47d1e67cdb953ee",
           "size": 15186
         },
         {
           "path": "mode-cube.png",
           "mode": "100644",
           "sha": "12893b154416622a195ae5cba87b956f328ef113",
+          "sha256": "6717ff40088788dd59811d302a457e4bda7d7b2ffb8ef1513892f42752c541c5",
           "size": 58243
         },
         {
           "path": "mode-level.png",
           "mode": "100644",
           "sha": "4200b87981b6e91e77c9a901025330fe93ee4537",
+          "sha256": "a2c4997def667dbd6b452cfde70910d4a19ade3c5068d078de0bfaee2fae363c",
           "size": 55893
         },
         {
           "path": "mode-scope.png",
           "mode": "100644",
           "sha": "34182cc013ec2905e5767015fdd5dae6e0a9cdaa",
+          "sha256": "4a5b26d269e3c082078c584291d203c9bd095f996580d4aa0597ff2c960df40f",
           "size": 43925
         },
         {
           "path": "qmi8658.py",
           "mode": "100644",
           "sha": "d792944d119fc66a3e5eedb05b05e477ff94106d",
+          "sha256": "1b008213b7a54e7ba39ac341feefbd4ac6fe16ca279ac4345667294f0a86460a",
           "size": 4324
         },
         {
           "path": "run.sh",
           "mode": "100644",
           "sha": "c3fb333b88b62433d3c62efc8b2585a4cb7c0307",
+          "sha256": "a6228c53b33871b4ad5a33b621f4a3e7e5a864da2f1243e958bdf22f735c24b8",
           "size": 15
         }
-      ]
+      ],
+      "revision": "b432e86161ea945ce16f4fe9fac56d8b0579dbe6"
     }
   ]
 }

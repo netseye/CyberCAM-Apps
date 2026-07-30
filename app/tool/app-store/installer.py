@@ -2,25 +2,29 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
 import re
 import shutil
 import stat
+import struct
 import tarfile
 import tempfile
 import time
 import zipfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from urllib.parse import quote
 
-from network import HttpClient, NetworkError
+from network import HttpClient
 from store_core import (
     CatalogError,
     SecurityError,
     StoreError,
-    git_blob_sha,
+    compare_versions,
+    file_digests,
     load_json_bytes,
     normalize_relative_path,
     parse_app_txt,
@@ -28,6 +32,7 @@ from store_core import (
     validate_app_id,
     validate_https_url,
     validate_sha256,
+    validate_version,
 )
 
 
@@ -36,6 +41,10 @@ MAX_TREE_BYTES = 12 * 1024 * 1024
 MAX_PACKAGE_BYTES = 256 * 1024 * 1024
 MAX_APP_BYTES = 512 * 1024 * 1024
 MAX_APP_FILES = 10_000
+MAX_APP_TXT_BYTES = 64 * 1024
+MAX_RUN_SH_BYTES = 1024 * 1024
+MAX_ICON_BYTES = 8 * 1024 * 1024
+MAX_ICON_DIMENSION = 4096
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
 
@@ -108,6 +117,20 @@ class StoreService:
         )
         self.app_dir = os.path.abspath(app_dir or os.path.dirname(__file__))
         self.client = client or HttpClient()
+
+    @contextmanager
+    def _operation_lock(self):
+        os.makedirs(self.data_root, exist_ok=True)
+        lock_path = os.path.join(self.data_root, "operation.lock")
+        with open(lock_path, "a+", encoding="utf-8") as handle:
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise StoreError("另一个安装或卸载操作正在进行")
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
     @property
     def bundled_catalog_path(self) -> str:
@@ -229,7 +252,10 @@ class StoreService:
             app["name_en"] = str(app.get("name_en") or app_id)[:64]
             app["category"] = str(app.get("category") or "other")[:32]
             app["summary_cn"] = str(app.get("summary_cn") or "")[:120]
-            app["version"] = str(app.get("version") or "rolling")
+            version = str(app.get("version") or "rolling")
+            app["version"] = (
+                "rolling" if version == "rolling" else validate_version(version)
+            )
             app["_source"] = source
             app["_source_name"] = source_name
             app["_source_kind"] = kind
@@ -246,6 +272,11 @@ class StoreService:
                 if not REPOSITORY_RE.fullmatch(repository):
                     raise CatalogError("%s 的 GitHub 仓库名无效" % app_id)
                 app["path"] = normalize_relative_path(app.get("path"))
+                revision = str(app.get("revision") or "").lower()
+                if revision and not re.fullmatch(r"[0-9a-f]{40}", revision):
+                    raise CatalogError("%s 的 revision 不是 Commit SHA" % app_id)
+                if revision:
+                    app["revision"] = revision
             else:
                 app["package_url"] = validate_https_url(app.get("package_url"))
                 app["sha256"] = validate_sha256(app.get("sha256"))
@@ -292,6 +323,7 @@ class StoreService:
                                 "type": "blob",
                                 "mode": str(item.get("mode") or ""),
                                 "sha": str(item.get("sha") or ""),
+                                "sha256": item.get("sha256"),
                                 "size": item.get("size"),
                             }
                         )
@@ -301,7 +333,9 @@ class StoreService:
                     total = sum(item["size"] for item in files)
                     if total > MAX_APP_BYTES or len(files) > MAX_APP_FILES:
                         raise SecurityError("%s 超过应用大小限制" % app["id"])
-                    app["_revision"] = str(source.get("ref") or "main")
+                    app["_revision"] = str(
+                        app.get("revision") or source.get("ref") or "main"
+                    )
                     app["_tree_sha"] = directory_sha
                     app["_files"] = files
                     app["_download_size"] = total
@@ -380,31 +414,68 @@ class StoreService:
                 except StoreError:
                     metadata = None
             app["_installed_metadata"] = metadata
+            installed_version = self._installed_version(target, metadata)
+            app["_installed_version"] = installed_version
             if not os.path.isdir(target) or os.path.islink(target):
                 app["status"] = "available"
             elif metadata is None or metadata.get("app_id") != app["id"]:
                 app["status"] = "unmanaged"
-            elif app["_source_kind"] == "github_tree":
-                remote_sha = app.get("_tree_sha")
-                if remote_sha and metadata.get("tree_sha") != remote_sha:
+            else:
+                if app["_source_kind"] == "github_tree":
+                    remote_content = app.get("_tree_sha")
+                    local_content = metadata.get("tree_sha")
+                else:
+                    remote_content = app.get("sha256")
+                    local_content = metadata.get("sha256")
+                content_changed = bool(
+                    remote_content and local_content != remote_content
+                )
+                remote_version = app.get("version")
+                if remote_version != "rolling" and installed_version:
+                    comparison = compare_versions(installed_version, remote_version)
+                    if comparison < 0:
+                        app["status"] = "update"
+                    elif comparison > 0:
+                        app["status"] = "newer"
+                    elif content_changed:
+                        app["status"] = "repair"
+                    else:
+                        app["status"] = "installed"
+                elif content_changed:
                     app["status"] = "update"
                 else:
                     app["status"] = "installed"
-            elif metadata.get("sha256") != app.get("sha256"):
-                app["status"] = "update"
-            else:
-                app["status"] = "installed"
             if app.get("_source_error") and app["status"] == "available":
                 app["status"] = "error"
         return apps
+
+    @staticmethod
+    def _installed_version(target: str, metadata: dict | None) -> str:
+        candidate = str((metadata or {}).get("version") or "")
+        if candidate:
+            try:
+                return validate_version(candidate)
+            except CatalogError:
+                pass
+        app_txt = os.path.join(target, "app.txt")
+        try:
+            if os.path.getsize(app_txt) > MAX_APP_TXT_BYTES:
+                return ""
+            with open(app_txt, "r", encoding="utf-8") as handle:
+                parsed = parse_app_txt(handle.read())
+            return parsed.get("version", "")
+        except (OSError, UnicodeError, StoreError):
+            return ""
 
     def install(self, app: dict, progress=None) -> dict:
         target = self._target_path(app["id"])
         if os.path.realpath(target) == os.path.realpath(self.app_dir):
             raise StoreError("应用商店不能在运行时更新自身")
-        if app["_source_kind"] == "github_tree":
-            return self._install_github(app, progress)
-        return self._install_archive(app, progress)
+        with self._operation_lock():
+            self._cleanup_stale_staging()
+            if app["_source_kind"] == "github_tree":
+                return self._install_github(app, progress)
+            return self._install_archive(app, progress)
 
     def _install_github(self, app: dict, progress=None) -> dict:
         files = app.get("_files")
@@ -423,6 +494,8 @@ class StoreService:
             repository = app["_source"]["repository"]
             for item in files:
                 relative = item["relative_path"]
+                if progress is not None:
+                    progress(completed, total, "准备下载 " + relative)
                 target = os.path.join(stage, *relative.split("/"))
                 os.makedirs(os.path.dirname(target), exist_ok=True)
                 raw_urls = [
@@ -457,14 +530,19 @@ class StoreService:
                         expected_size=item["size"],
                         progress=file_progress,
                     )
-                with open(target, "rb") as handle:
-                    data = handle.read()
-                if git_blob_sha(data) != item["sha"]:
+                git_sha, sha256 = file_digests(
+                    target, expected_size=item["size"]
+                )
+                if git_sha != item["sha"]:
                     raise SecurityError("文件 Git SHA 校验失败：%s" % relative)
+                if item.get("sha256") and sha256 != item["sha256"]:
+                    raise SecurityError("文件 SHA-256 校验失败：%s" % relative)
                 os.chmod(target, 0o755 if item["mode"] == "100755" else 0o644)
                 completed += item["size"]
+                if progress is not None:
+                    progress(completed, total, "已校验 " + relative)
             metadata = {
-                "schema_version": 1,
+                "schema_version": 2,
                 "app_id": app["id"],
                 "installed_at": _utc_now(),
                 "catalog": app["_catalog_name"],
@@ -473,6 +551,9 @@ class StoreService:
                 "repository_path": app["path"],
                 "revision": revision,
                 "tree_sha": app["_tree_sha"],
+                "version": (
+                    app["version"] if app.get("version") != "rolling" else ""
+                ),
             }
             self._finish_install(stage, app, metadata)
             if progress is not None:
@@ -504,6 +585,8 @@ class StoreService:
             )
             if _file_sha256(package) != app["sha256"]:
                 raise SecurityError("应用包 SHA-256 校验失败")
+            if progress is not None:
+                progress(package_size, package_size, "校验应用包")
             self._extract_archive(package, extracted)
             stage = self._locate_archive_app(extracted)
             manifest_path = os.path.join(stage, "manifest.json")
@@ -515,13 +598,15 @@ class StoreService:
             manifest_version = str(manifest.get("version") or "")
             if not manifest_version:
                 raise CatalogError("应用包 manifest 缺少 version")
+            manifest_version = validate_version(manifest_version)
             if app["version"] != "rolling" and manifest_version != app["version"]:
                 raise SecurityError("应用包 manifest 版本与目录不一致")
+            app = dict(app)
+            app["version"] = manifest_version
             persistent = manifest.get("persistent_files", [])
             if persistent:
                 if not isinstance(persistent, list):
                     raise CatalogError("manifest persistent_files 必须是数组")
-                app = dict(app)
                 app["persistent_files"] = list(
                     dict.fromkeys(
                         app["persistent_files"]
@@ -529,14 +614,14 @@ class StoreService:
                     )
                 )
             metadata = {
-                "schema_version": 1,
+                "schema_version": 2,
                 "app_id": app["id"],
                 "installed_at": _utc_now(),
                 "catalog": app["_catalog_name"],
                 "source_kind": "archive",
                 "package_url": app["package_url"],
                 "sha256": app["sha256"],
-                "version": str(manifest.get("version") or app["version"]),
+                "version": manifest_version,
             }
             self._finish_install(stage, app, metadata)
             if progress is not None:
@@ -549,6 +634,7 @@ class StoreService:
         os.makedirs(self.app_root, exist_ok=True)
         os.makedirs(os.path.join(self.data_root, "staging"), exist_ok=True)
         os.makedirs(os.path.join(self.data_root, "backups"), exist_ok=True)
+        os.makedirs(os.path.join(self.data_root, "previous"), exist_ok=True)
         os.makedirs(os.path.join(self.data_root, "trash"), exist_ok=True)
         free = shutil.disk_usage(self.data_root).free
         required = max(8 * 1024 * 1024, expected_size * 2 + 4 * 1024 * 1024)
@@ -558,22 +644,61 @@ class StoreService:
             raise StoreError("应用目录与暂存目录必须位于同一文件系统")
 
     def _finish_install(self, stage: str, app: dict, metadata: dict) -> None:
-        self._validate_stage(stage)
+        parsed = self._validate_stage(stage, expected_version=app.get("version"))
+        if parsed.get("version"):
+            metadata["version"] = parsed["version"]
         self._preserve_files(app["id"], stage, app.get("persistent_files", []))
         os.chmod(os.path.join(stage, "run.sh"), 0o755)
         _write_json_atomic(os.path.join(stage, ".app-store.json"), metadata)
         self._activate(app["id"], stage)
 
-    def _validate_stage(self, stage: str) -> None:
+    def _validate_stage(
+        self, stage: str, expected_version: str | None = None
+    ) -> dict[str, str]:
         for required in ("app.txt", "run.sh", "icon.png"):
             path = os.path.join(stage, required)
             if not os.path.isfile(path) or os.path.islink(path):
                 raise CatalogError("应用缺少文件：%s" % required)
-        with open(os.path.join(stage, "app.txt"), "r", encoding="utf-8") as handle:
-            parse_app_txt(handle.read())
-        with open(os.path.join(stage, "icon.png"), "rb") as handle:
-            if handle.read(8) != b"\x89PNG\r\n\x1a\n":
-                raise CatalogError("icon.png 不是有效的 PNG 文件")
+        app_txt = os.path.join(stage, "app.txt")
+        run_sh = os.path.join(stage, "run.sh")
+        icon = os.path.join(stage, "icon.png")
+        if os.path.getsize(app_txt) > MAX_APP_TXT_BYTES:
+            raise CatalogError("app.txt 超过 64 KB")
+        run_size = os.path.getsize(run_sh)
+        if run_size <= 0 or run_size > MAX_RUN_SH_BYTES:
+            raise CatalogError("run.sh 大小无效")
+        icon_size = os.path.getsize(icon)
+        if icon_size < 24 or icon_size > MAX_ICON_BYTES:
+            raise CatalogError("icon.png 大小无效")
+        try:
+            with open(app_txt, "r", encoding="utf-8") as handle:
+                parsed = parse_app_txt(handle.read())
+        except UnicodeError:
+            raise CatalogError("app.txt 必须使用 UTF-8 编码")
+        expected_version = str(expected_version or "")
+        if expected_version and expected_version != "rolling":
+            actual_version = parsed.get("version")
+            if not actual_version:
+                raise CatalogError("app.txt 缺少 version")
+            if actual_version != expected_version:
+                raise SecurityError("app.txt 版本与目录不一致")
+        with open(icon, "rb") as handle:
+            header = handle.read(24)
+        if (
+            header[:8] != b"\x89PNG\r\n\x1a\n"
+            or header[8:12] != b"\x00\x00\x00\r"
+            or header[12:16] != b"IHDR"
+        ):
+            raise CatalogError("icon.png 不是有效的 PNG 文件")
+        width, height = struct.unpack(">II", header[16:24])
+        if (
+            width <= 0
+            or height <= 0
+            or width > MAX_ICON_DIMENSION
+            or height > MAX_ICON_DIMENSION
+        ):
+            raise CatalogError("icon.png 尺寸无效")
+        return parsed
 
     def _preserve_files(
         self, app_id: str, stage: str, persistent_files: list[str]
@@ -633,7 +758,7 @@ class StoreService:
             raise SecurityError("目标应用目录不能是符号链接")
         if os.path.exists(target) and not os.path.isdir(target):
             raise SecurityError("目标应用路径不是目录")
-        stamp = "%d" % int(time.time())
+        stamp = "%d" % time.time_ns()
         backup = os.path.join(self.data_root, "backups", app_id + "-" + stamp)
         moved_old = False
         try:
@@ -648,17 +773,42 @@ class StoreService:
                 os.rename(backup, target)
             raise
         if moved_old:
-            shutil.rmtree(backup, ignore_errors=True)
+            try:
+                self._retain_previous(app_id, backup)
+            except Exception:
+                os.rename(target, stage)
+                if os.path.isdir(backup):
+                    os.rename(backup, target)
+                raise
 
     def recover_incomplete_updates(self) -> list[str]:
         """Restore an old app if power was lost between the two rename calls."""
 
+        with self._operation_lock():
+            self._cleanup_stale_staging()
+            return self._recover_incomplete_updates()
+
+    def _recover_incomplete_updates(self) -> list[str]:
         restored: list[str] = []
         backup_root = os.path.join(self.data_root, "backups")
         if not os.path.isdir(backup_root):
             return restored
         os.makedirs(self.app_root, exist_ok=True)
-        for name in sorted(os.listdir(backup_root), reverse=True):
+        retained: set[str] = set()
+        candidate_names = [
+            value for value in os.listdir(backup_root) if "-" in value
+        ]
+        names = sorted(
+            candidate_names,
+            key=lambda value: (
+                value.rsplit("-", 1)[0],
+                int(value.rsplit("-", 1)[1])
+                if value.rsplit("-", 1)[1].isdigit()
+                else -1,
+            ),
+            reverse=True,
+        )
+        for name in names:
             path = os.path.join(backup_root, name)
             if not os.path.isdir(path) or os.path.islink(path) or "-" not in name:
                 continue
@@ -673,6 +823,11 @@ class StoreService:
             if not os.path.exists(target):
                 os.rename(path, target)
                 restored.append(app_id)
+            elif app_id not in retained:
+                retained.add(app_id)
+                self._retain_previous(app_id, path)
+            else:
+                shutil.rmtree(path, ignore_errors=True)
         return restored
 
     def uninstall(self, app_id: str) -> str:
@@ -680,14 +835,68 @@ class StoreService:
         target = self._target_path(app_id)
         if os.path.realpath(target) == os.path.realpath(self.app_dir):
             raise StoreError("应用商店不能在运行时卸载自身")
-        if not os.path.isdir(target) or os.path.islink(target):
-            raise StoreError("应用未安装")
-        self._prepare_storage(0)
-        destination = os.path.join(
-            self.data_root, "trash", "%s-%d" % (app_id, int(time.time()))
-        )
-        os.rename(target, destination)
-        return destination
+        with self._operation_lock():
+            if not os.path.isdir(target) or os.path.islink(target):
+                raise StoreError("应用未安装")
+            self._prepare_storage(0)
+            destination = os.path.join(
+                self.data_root, "trash", "%s-%d" % (app_id, time.time_ns())
+            )
+            os.rename(target, destination)
+            return destination
+
+    def rollback(self, app_id: str) -> None:
+        """Swap the installed app with its one retained previous version."""
+
+        app_id = validate_app_id(app_id)
+        target = self._target_path(app_id)
+        previous = os.path.join(self.data_root, "previous", app_id)
+        if os.path.realpath(target) == os.path.realpath(self.app_dir):
+            raise StoreError("应用商店不能在运行时回滚自身")
+        with self._operation_lock():
+            self._prepare_storage(0)
+            if (
+                not os.path.isdir(target)
+                or os.path.islink(target)
+                or not os.path.isdir(previous)
+                or os.path.islink(previous)
+            ):
+                raise StoreError("没有可回滚的上一版本")
+            swap = os.path.join(
+                self.data_root,
+                "backups",
+                "%s-%d" % (app_id, time.time_ns()),
+            )
+            os.rename(target, swap)
+            try:
+                os.rename(previous, target)
+            except Exception:
+                os.rename(swap, target)
+                raise
+            os.rename(swap, previous)
+
+    def _cleanup_stale_staging(self) -> None:
+        staging = os.path.join(self.data_root, "staging")
+        os.makedirs(staging, exist_ok=True)
+        for name in os.listdir(staging):
+            path = os.path.join(staging, name)
+            if os.path.isdir(path) and not os.path.islink(path):
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                try:
+                    os.unlink(path)
+                except FileNotFoundError:
+                    pass
+
+    def _retain_previous(self, app_id: str, source: str) -> None:
+        previous_root = os.path.join(self.data_root, "previous")
+        os.makedirs(previous_root, exist_ok=True)
+        destination = os.path.join(previous_root, validate_app_id(app_id))
+        if os.path.isdir(destination) and not os.path.islink(destination):
+            shutil.rmtree(destination)
+        elif os.path.lexists(destination):
+            os.unlink(destination)
+        os.rename(source, destination)
 
     def _target_path(self, app_id: str) -> str:
         return os.path.join(self.app_root, validate_app_id(app_id))

@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import io
 import json
@@ -13,12 +14,20 @@ if APP_DIR not in sys.path:
     sys.path.insert(0, APP_DIR)
 
 from installer import StoreService  # noqa: E402
-from store_core import SecurityError, git_blob_sha  # noqa: E402
+from store_core import (  # noqa: E402
+    OperationCancelled,
+    SecurityError,
+    StoreError,
+    git_blob_sha,
+)
 
 
 APP_TXT = b'name_cn="Demo"\nname_en="Demo"\nversion="1.0.0"\nindex=9\n'
 RUN_SH = b"#!/bin/sh\npython main.py\n"
-ICON = b"\x89PNG\r\n\x1a\nminimal-test-data"
+ICON = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
+    "+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 MAIN_V1 = b"print('v1')\n"
 
 
@@ -57,7 +66,7 @@ def write_json(path, value):
         json.dump(value, handle)
 
 
-def github_catalog(persistent=None):
+def github_catalog(persistent=None, version=None):
     return {
         "schema_version": 1,
         "sources": {
@@ -68,14 +77,17 @@ def github_catalog(persistent=None):
             }
         },
         "apps": [
-            {
-                "id": "demo",
-                "name_cn": "Demo",
-                "name_en": "Demo",
-                "source": "official",
-                "path": "app/tool/demo",
-                "persistent_files": persistent or [],
-            }
+            dict(
+                {
+                    "id": "demo",
+                    "name_cn": "Demo",
+                    "name_en": "Demo",
+                    "source": "official",
+                    "path": "app/tool/demo",
+                    "persistent_files": persistent or [],
+                },
+                **({"version": version} if version else {}),
+            )
         ],
     }
 
@@ -136,14 +148,14 @@ class InstallerTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def configure_github(self, files=None, persistent=None):
+    def configure_github(self, files=None, persistent=None, version=None):
         files = files or {
             "app.txt": APP_TXT,
             "run.sh": RUN_SH,
             "icon.png": ICON,
             "main.py": MAIN_V1,
         }
-        catalog = github_catalog(persistent)
+        catalog = github_catalog(persistent, version)
         self.client.json_values[self.catalog_url] = catalog
         commit_url = "https://api.github.com/repos/owner/repo/commits/main"
         tree_url = "https://api.github.com/repos/owner/repo/git/trees/%s?recursive=1" % (
@@ -177,6 +189,12 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(
             self.service.refresh_local_status(apps)[0]["status"], "installed"
         )
+        with open(
+            os.path.join(target, ".app-store.json"), encoding="utf-8"
+        ) as handle:
+            metadata = json.load(handle)
+        self.assertEqual(metadata["schema_version"], 2)
+        self.assertEqual(metadata["version"], "1.0.0")
         staging = os.path.join(self.data_root, "staging")
         self.assertEqual(os.listdir(staging), [])
 
@@ -191,6 +209,14 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(len(apps), 14)
         self.assertTrue(all(app.get("_files") for app in apps))
         self.assertTrue(all(app.get("_tree_sha") for app in apps))
+        self.assertTrue(all(app.get("_revision") for app in apps))
+        self.assertTrue(
+            all(
+                item.get("sha256")
+                for app in apps
+                for item in app.get("_files", [])
+            )
+        )
         self.assertEqual(
             apps[0]["_raw_bases"],
             [
@@ -249,6 +275,77 @@ class InstallerTests(unittest.TestCase):
         with self.assertRaises(SecurityError):
             self.service.install(apps[0])
         self.assertTrue(os.path.isfile(os.path.join(target, "marker")))
+
+    def test_catalog_and_app_txt_versions_must_match(self):
+        self.configure_github(version="1.2.0")
+        apps, _ = self.service.refresh()
+        with self.assertRaises(SecurityError):
+            self.service.install(apps[0])
+        self.assertFalse(os.path.exists(os.path.join(self.app_root, "demo")))
+
+    def test_cancelled_download_does_not_replace_existing_app(self):
+        self.configure_github()
+        apps, _ = self.service.refresh()
+        target = os.path.join(self.app_root, "demo")
+        os.makedirs(target)
+        with open(os.path.join(target, "marker"), "w", encoding="utf-8") as handle:
+            handle.write("old")
+
+        def cancel(*_args):
+            raise OperationCancelled("cancel")
+
+        with self.assertRaises(OperationCancelled):
+            self.service.install(apps[0], cancel)
+        self.assertTrue(os.path.isfile(os.path.join(target, "marker")))
+        self.assertEqual(
+            os.listdir(os.path.join(self.data_root, "staging")), []
+        )
+
+    def test_update_retains_previous_version_and_rollback_swaps_it(self):
+        self.configure_github()
+        apps, _ = self.service.refresh()
+        self.service.install(apps[0])
+        target = os.path.join(self.app_root, "demo")
+        with open(os.path.join(target, "main.py"), "wb") as handle:
+            handle.write(b"locally-modified\n")
+        self.service.install(apps[0])
+        with open(os.path.join(target, "main.py"), "rb") as handle:
+            self.assertEqual(handle.read(), MAIN_V1)
+        self.service.rollback("demo")
+        with open(os.path.join(target, "main.py"), "rb") as handle:
+            self.assertEqual(handle.read(), b"locally-modified\n")
+
+    def test_version_status_distinguishes_update_newer_and_repair(self):
+        self.configure_github(version="1.2.0")
+        apps, _ = self.service.refresh()
+        target = os.path.join(self.app_root, "demo")
+        os.makedirs(target)
+        with open(os.path.join(target, "app.txt"), "wb") as handle:
+            handle.write(APP_TXT)
+        metadata_path = os.path.join(target, ".app-store.json")
+
+        def status(version, tree_sha):
+            write_json(
+                metadata_path,
+                {
+                    "schema_version": 2,
+                    "app_id": "demo",
+                    "version": version,
+                    "tree_sha": tree_sha,
+                },
+            )
+            return self.service.refresh_local_status(apps)[0]["status"]
+
+        self.assertEqual(status("1.1.0", "b" * 40), "update")
+        self.assertEqual(status("1.3.0", "b" * 40), "newer")
+        self.assertEqual(status("1.2.0", "b" * 40), "repair")
+        self.assertEqual(status("1.2.0", "a" * 40), "installed")
+
+    def test_operation_lock_rejects_a_second_writer(self):
+        with self.service._operation_lock():
+            with self.assertRaises(StoreError):
+                with self.service._operation_lock():
+                    pass
 
     def test_archive_install_and_recoverable_uninstall(self):
         package = io.BytesIO()
